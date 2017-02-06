@@ -4,6 +4,7 @@ u"""イメージファイルをダウンロードしてファイルに保存す�
 import os
 import unittest
 import shutil
+import requests
 from urllib.error import HTTPError
 from urllib.error import URLError
 from urllib.request import urlretrieve

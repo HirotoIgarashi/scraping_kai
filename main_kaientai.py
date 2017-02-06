@@ -4,6 +4,7 @@ u"""Webスクレイピング用のコード
 """
 import os
 import re
+# import time
 from datetime import datetime
 from selenium.common.exceptions import NoSuchElementException
 # import time
@@ -310,6 +311,7 @@ if __name__ == '__main__':
 
         webcd = ''
 
+        logprint(product_url)
         product_page = KAIENTAI.get_page(product_url)
 
         # 01 ID: URLに表示されるwebcdを取得
@@ -397,8 +399,27 @@ if __name__ == '__main__':
 
         product_list.extend([price])
 
-        # 13 仕切価: 空欄
-        product_list.extend([''])
+        # 13 仕切価: 卸売価格で表示されたもの 数字のみ
+        try:
+            cost_text = product_page.find_element_by_xpath(
+                "//span[@id='MainContent_lblCost']"
+            ).text
+
+        except NoSuchElementException:
+            cost_text = ''
+        else:
+            pass
+
+        decimal_search = re.findall(r"\d+", cost_text)
+
+        if len(decimal_search) == 0:
+            decimal_search = [cost_text]
+
+        cost = ''
+        for decimal in decimal_search:
+            cost += decimal
+
+        product_list.extend([cost])
 
         # 14 掛率: 空欄
         product_list.extend([''])
@@ -406,36 +427,89 @@ if __name__ == '__main__':
         # 15 販売価: 空欄
         product_list.extend([''])
 
-        # <dl>タグのHTML要素を取得する。
+        # 16 項目選択肢1: カラーやサイズなど選択項目がある場合の項目名
+        # ラベルを取得する。
+        label = ''
         try:
-            dl_tag = product_page.find_elements_by_xpath(
-                # "//dl[@class='goodsatt']"
-                "//dl[@class='goodsatt']"
-            )
-            print(dl_tag)
-            print(type(dl_tag))
+            label = product_page.find_element_by_xpath(
+                "//span[@id='MainContent_lbl属性1']"
+            ).text
         except NoSuchElementException:
-            dl_tag = ''
-        else:
             pass
 
-        # 16 項目選択肢1: カラーやサイズなど選択項目がある場合の項目名
-        product_list.extend([''])
+        product_list.extend([label.replace('：', '')])
 
         # 17 項目1: 選択項目のリスト表示されたもの半角スペースで区切って表示
-        product_list.extend([''])
+        # オプションを取得する。
+        option_list = []
+        option_list = product_page.find_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性1']/option"
+        )
+
+        option_text = ''
+        for option in option_list:
+            if len(option_text) == 0:
+                option_text = option.text
+            else:
+                option_text += ' ' + option.text
+
+        product_list.extend([option_text])
 
         # 18 項目選択肢2: 選択項目が複数ある場合（2個め）
-        product_list.extend([''])
+        # ラベルを取得する。
+        label = ''
+        try:
+            label = product_page.find_element_by_xpath(
+                "//span[@id='MainContent_lbl属性2']"
+            ).text
+        except NoSuchElementException:
+            pass
+
+        product_list.extend([label.replace('：', '')])
 
         # 19 項目2: 選択項目のリスト表示されたもの半角スペースで区切って表示
-        product_list.extend([''])
+        # オプションを取得する。
+        option_list = []
+        option_list = product_page.find_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性2']/option"
+        )
+
+        option_text = ''
+        for option in option_list:
+            if len(option_text) == 0:
+                option_text = option.text
+            else:
+                option_text += ' ' + option.text
+
+        product_list.extend([option_text])
 
         # 20 項目選択肢3: 選択項目が複数ある場合（3個め）
-        product_list.extend([''])
+        # ラベルを取得する。
+        label = ''
+        try:
+            label = product_page.find_element_by_xpath(
+                "//span[@id='MainContent_lbl属性3']"
+            ).text
+        except NoSuchElementException:
+            pass
+
+        product_list.extend([label.replace('：', '')])
 
         # 21 項目3: 選択項目のリスト表示されたもの半角スペースで区切って表示
-        product_list.extend([''])
+        # オプションを取得する。
+        option_list = []
+        option_list = product_page.find_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性3']/option"
+        )
+
+        option_text = ''
+        for option in option_list:
+            if len(option_text) == 0:
+                option_text = option.text
+            else:
+                option_text += ' ' + option.text
+
+        product_list.extend([option_text])
 
         # 22 項目選択肢4: 空欄
         product_list.extend([''])
@@ -549,23 +623,70 @@ if __name__ == '__main__':
         # 38 商品仕様5: 空欄
         product_list.extend([''])
 
+        # 商品画像
+        up_image_list = KAIENTAI.get_attribute_list_by_xpath(
+            "//div[@id='up']/img", 'src'
+        )
+        image_name_list = []
+        for up_image in up_image_list:
+            image_name_search = re.search(r"[\da-zA-Z_-]+.jpg", up_image)
+            if image_name_search is not None:
+                image_name = image_name_search.group()
+                image_name_list.append([up_image, image_name])
+
         # 39 商品画像1: 卸CD＋『-』＋ID＋『.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 0:
+            image_name0 = 'ket-' + webcd + '.jpg'
+            product_list.extend([image_name0])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[0][0], 'kaientai-image', image_name0)
+        else:
+            product_list.extend([''])
 
         # 40 商品画像2: 卸CD＋『-』＋ID＋『_1.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 1:
+            image_name1 = 'ket-' + webcd + '_1.jpg'
+            product_list.extend([image_name1])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[1][0], 'kaientai-image', image_name1)
+        else:
+            product_list.extend([''])
 
         # 41 商品画像3: 卸CD＋『-』＋ID＋『_2.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 2:
+            image_name2 = 'ket-' + webcd + '_2.jpg'
+            product_list.extend([image_name2])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[2][0], 'kaientai-image', image_name2)
+        else:
+            product_list.extend([''])
 
         # 42 商品画像4: 卸CD＋『-』＋ID＋『_3.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 3:
+            image_name3 = 'ket-' + webcd + '_3.jpg'
+            product_list.extend([image_name3])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[3][0], 'kaientai-image', image_name3)
+        else:
+            product_list.extend([''])
 
         # 43 商品画像5: 卸CD＋『-』＋ID＋『_4.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 4:
+            image_name4 = 'ket-' + webcd + '_4.jpg'
+            product_list.extend([image_name4])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[4][0], 'kaientai-image', image_name4)
+        else:
+            product_list.extend([''])
 
         # 44 商品画像6: 卸CD＋『-』＋ID＋『_5.jpg』 画像がない場合はブランク
-        product_list.extend([''])
+        if len(image_name_list) > 5:
+            image_name5 = 'ket-' + webcd + '_5.jpg'
+            product_list.extend([image_name5])
+            # imagefile.download_and_save_dir_direct(
+            #     image_name_list[5][0], 'kaientai-image', image_name5)
+        else:
+            product_list.extend([''])
 
         # 45 販売説明画像1: 空欄
         product_list.extend([''])
@@ -579,8 +700,26 @@ if __name__ == '__main__':
         # 48 送料: 空欄
         product_list.extend([''])
 
+        # アイコン画像
+        icon_image_list = KAIENTAI.get_attribute_list_by_xpath(
+            "//div[@id='r-icon']/img", 'src'
+        )
+        icon_image_name_list = []
+        icon_name_list = []
+        icon_url_list = []
+        for icon_image in icon_image_list:
+            icon_name_search = re.search(r"[\da-zA-Z_-]+.png", icon_image)
+            if icon_name_search is not None:
+                icon_name = icon_name_search.group()
+                icon_image_name_list.append([icon_image, icon_name])
+                icon_name_list.append(icon_name)
+                icon_url_list.append(icon_image)
+
         # 49 別途送料: アイコン欄に、icon_03.pngがある場合に『1』をセット
-        product_list.extend([''])
+        if 'icon_03.png' in icon_name_list:
+            product_list.extend(['1'])
+        else:
+            product_list.extend([''])
 
         # 50 価格制限定価: 空欄
         product_list.extend([''])
@@ -595,7 +734,11 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 54 取寄商品: アイコン欄に、icon_06.pngがある場合に『1』をセット
-        product_list.extend([''])
+        if 'icon_06.png' in icon_name_list:
+            product_list.extend(['1'])
+        else:
+            product_list.extend([''])
+
 
         # 55 受注生産: 空欄
         product_list.extend([''])
@@ -640,31 +783,85 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 69 その他1: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 0:
+            icon_name0 = icon_image_name_list[0][1]
+            product_list.extend([icon_name0])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[0][0], 'kaientai-icon', icon_name0)
+        else:
+            product_list.extend([''])
 
         # 70 その他2: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 1:
+            icon_name1 = icon_image_name_list[1][1]
+            product_list.extend([icon_name1])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[1][0], 'kaientai-icon', icon_name1)
+        else:
+            product_list.extend([''])
 
         # 71 その他3: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 2:
+            icon_name2 = icon_image_name_list[2][1]
+            product_list.extend([icon_name2])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[2][0], 'kaientai-icon', icon_name2)
+        else:
+            product_list.extend([''])
 
         # 72 その他4: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 3:
+            icon_name3 = icon_image_name_list[3][1]
+            product_list.extend([icon_name3])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[3][0], 'kaientai-icon', icon_name3)
+        else:
+            product_list.extend([''])
 
         # 73 その他5: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 4:
+            icon_name4 = icon_image_name_list[4][1]
+            product_list.extend([icon_name4])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[4][0], 'kaientai-icon', icon_name4)
+        else:
+            product_list.extend([''])
 
         # 74 その他6: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 5:
+            icon_name5 = icon_image_name_list[5][1]
+            product_list.extend([icon_name5])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[5][0], 'kaientai-icon', icon_name5)
+        else:
+            product_list.extend([''])
 
         # 75 その他7: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 6:
+            icon_name6 = icon_image_name_list[6][1]
+            product_list.extend([icon_name6])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[6][0], 'kaientai-icon', icon_name6)
+        else:
+            product_list.extend([''])
 
         # 76 その他8: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 7:
+            icon_name7 = icon_image_name_list[7][1]
+            product_list.extend([icon_name7])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[7][0], 'kaientai-icon', icon_name7)
+        else:
+            product_list.extend([''])
 
         # 77 その他9: アイコン欄のアイコン名称
-        product_list.extend([''])
+        if len(icon_image_name_list) > 8:
+            icon_name8 = icon_image_name_list[8][1]
+            product_list.extend([icon_name8])
+            # imagefile.download_and_save_dir_direct(
+            #     icon_image_name_list[8][0], 'kaientai-icon', icon_name8)
+        else:
+            product_list.extend([''])
 
         # 78 備考1: 同一カテゴリー商品のWEBCD
         # 複数ある場合は半角スペースで区切る
@@ -712,68 +909,16 @@ if __name__ == '__main__':
         today = datetime.now()
         product_list.extend([str(today.year) + '/' + str(today.month) + '/' + str(today.day)])
 
-        # product_page = SANWACHANNEL.get_product_driver(url)
-        # # 品名、製品品番、JANコード、標準価格、仕切価格を取得する。
-        # product_text = SANWACHANNEL.get_product_text(
-        #     product_page, GET_ITEMS_LIST)
-
-        # model_number = product_text[1]
-
-        # # 「￥」と「,」を削除する。
-        # if product_text[3].startswith('￥'):
-        #     product_text[3] = SANWACHANNEL.get_only_number(
-        #         product_text[3])
-        # if product_text[4].startswith('￥'):
-        #     product_text[4] = SANWACHANNEL.get_only_number(
-        #         product_text[4])
-
-        # # 商品画像を取得する。
-        # image_list = SANWACHANNEL.make_image_row(
-        #     product_page, PRODUCT_IMAGE_XPATH)
-
-        # if len(image_list[0]) != 0:
-        #     # '_ma'を削除する。
-        #     # image_name = image_list[0][0].replace('_MA', '')
-        #     # print(image_name)
-        #     extension_list = image_list[0][0].split('.')
-        #     extension = extension_list[1]
-        #     image_name = model_number
-        #     image_name = image_name.lower() + '.' + extension
-
-        #     # イメージをダウンロードして保存する。
-        #     imagefile.download_and_save_dir_direct(
-        #         image_list[0][1], 'sanwaimage', image_name)
-        #     product_text.extend([image_name])
-
-        # # 商品仕様画像を取得する。
-        # spec_image_list = SANWACHANNEL.make_image_row(
-        #     product_page, PRODUCT_SPEC_IMAGE_XPATH)
-
-        # # イメージをダウンロードして保存する。
-        # for image_list in spec_image_list:
-        #     if len(image_list) != 0:
-        #         image_name = image_list[0].lower()
-        #         imagefile.download_and_save_dir_direct(
-        #             image_list[1],
-        #             'sanwaimage/icon',
-        #             image_name)
-        #         product_text.extend([image_name])
-        #     else:
-        #         product_text.extend([''])
-
-        # # 特長、仕様、対応機種を取得する。
-        # product_fetr = SANWACHANNEL.get_product_fetr(
-        #     product_page, FETR_AREA_XPATH, model_number)
-        # product_text.extend(product_fetr)
-        # # リンク先の情報を取得する。
-        # link_dist_info = SANWACHANNEL.get_link_dist_info(
-        #     product_page, LINK_XPATH)
-        # product_text.extend(link_dist_info)
-
-        # CSVファイルに書き込む
         CSVFILE.writerow(product_list)
 
         COMPLETE_FILE.write(product_url + ',' + product_category + '\n')
+
+        # アイコン画像の保存
+        # for url in icon_url_list:
+        #     print(url)
+        #     icon_image = KAIENTAI.get_page(url)
+        #     print(type(icon_image))
+        #     print(icon_image.find_element_by_xpath("//body").get_attribute('innerHTML'))
 
     COMPLETE_FILE.close()
 
