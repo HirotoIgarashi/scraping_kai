@@ -361,8 +361,12 @@ if __name__ == '__main__':
         # 10 型番: 商品名の/ 以降次のスペースで区切られたもの
         # 移乗サポート台 http://www.kaientai.cc/goods.aspx?webcd=257442 の
         # 型番は0002である。excelで開くと2になっているがcsv上は0002になっている。
-        model_number = lbl_goods_name.split('/')[1].split('　')[0].strip()
-        product_list.extend([model_number])
+        model_number_split = lbl_goods_name.split('/')
+        if len(model_number_split) > 1:
+            model_number = model_number_split[1].split('　')[0].strip()
+            product_list.extend([model_number])
+        else:
+            product_list.extend([''])
 
         # 11 メーカー名: メーカー名で表示されたもの
         try:
