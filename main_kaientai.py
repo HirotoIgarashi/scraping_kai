@@ -16,7 +16,7 @@ import textfile
 import csvfile
 # import imagefile
 
-URL = 'http://www.kaientai.cc/Default.aspx'
+URL = 'https://www.kaientai.cc/Default.aspx'
 
 LOGIN_DICT = {
     'login_id': 'general-h',
@@ -197,7 +197,7 @@ if __name__ == '__main__':
         # カテゴリ毎のリンクを取得する。
         XPATH = "//a[@href]"
         ATTRIBUTE = "href"
-        PATTERN = "http://www.kaientai.cc/listword.aspx?ccd="
+        PATTERN = "https://www.kaientai.cc/listword.aspx?ccd="
         CATEGORY_LINKS = KAIENTAI.get_link_and_text_list(XPATH, ATTRIBUTE, PATTERN)
 
         for link in CATEGORY_LINKS:
@@ -359,7 +359,7 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 10 型番: 商品名の/ 以降次のスペースで区切られたもの
-        # 移乗サポート台 http://www.kaientai.cc/goods.aspx?webcd=257442 の
+        # 移乗サポート台 https://www.kaientai.cc/goods.aspx?webcd=257442 の
         # 型番は0002である。excelで開くと2になっているがcsv上は0002になっている。
         model_number_split = lbl_goods_name.split('/')
         if len(model_number_split) > 1:
