@@ -6,7 +6,10 @@ import os
 import re
 # import time
 from datetime import datetime
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import staleness_of
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
 # import time
 # My library
 from logmessage import logprint
@@ -280,7 +283,13 @@ if __name__ == '__main__':
             if (next_link is None) or (next_link.text == '>>'):
                 break
 
+            # クリック前のページ
+            old_page = DRIVER.find_element_by_tag_name('html')
+
             KAIENTAI.execute_link_click_by_element(next_link)
+
+            # クリック前のページが古くなるまで待つ
+            WebDriverWait(DRIVER, 30).until(staleness_of(old_page))
 
         logprint(str(url_count) + '件の商品のURLを保存しました。')
 
@@ -313,6 +322,18 @@ if __name__ == '__main__':
 
         logprint(product_url)
         product_page = KAIENTAI.get_page(product_url)
+
+        # ご指定の商品がデータベースにありません。の場合の処理
+        try:
+            pnl_no_item = product_page.find_element_by_xpath(
+                "//div[@id='MainContent_pnlNoItem']"
+            )
+        except NoSuchElementException:
+            pass
+            lbl_goods_name = ''
+        else:
+            logprint(product_url + 'がデータベースにないためスキップします。')
+            continue
 
         # 01 ID: URLに表示されるwebcdを取得
         webcd_search = re.search(r"\d+", product_url)
@@ -474,9 +495,12 @@ if __name__ == '__main__':
         # 19 項目2: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
         option_list = []
-        option_list = product_page.find_elements_by_xpath(
-            "//select[@name='ctl00$MainContent$ddl属性2']/option"
-        )
+        try:
+            option_list = product_page.find_elements_by_xpath(
+                "//select[@name='ctl00$MainContent$ddl属性2']/option"
+            )
+        except WebDriverException:
+            pass
 
         option_text = ''
         for option in option_list:
@@ -502,9 +526,12 @@ if __name__ == '__main__':
         # 21 項目3: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
         option_list = []
-        option_list = product_page.find_elements_by_xpath(
-            "//select[@name='ctl00$MainContent$ddl属性3']/option"
-        )
+        try:
+            option_list = product_page.find_elements_by_xpath(
+                "//select[@name='ctl00$MainContent$ddl属性3']/option"
+            )
+        except WebDriverException:
+            pass
 
         option_text = ''
         for option in option_list:

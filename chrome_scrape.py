@@ -5,8 +5,11 @@ webDriver: Chrome
 """
 import os
 import re
+import time
 from datetime import datetime
 from selenium import webdriver
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.expected_conditions import staleness_of
 from selenium.common.exceptions import NoSuchElementException
@@ -14,6 +17,7 @@ from selenium.common.exceptions import NoSuchElementException
 from logmessage import logprint
 import textfile
 import csvfile
+import imagefile
 
 # csvファイルを格納するディレクトリ
 CSV_DIR = './kaientai/'
@@ -168,6 +172,7 @@ if __name__ == '__main__':
 
     # ログイン処理
     DRIVER.get('https://www.kaientai.cc/')
+    kaientai_cookie = DRIVER.get_cookies()
 
     LOGIN_INFO = {
         'login_id': 'general-h',
@@ -319,7 +324,7 @@ if __name__ == '__main__':
             else:
                 logprint(click_text + 'をクリックしました。')
 
-            # クリック前のページが古くなるまでまで待つ
+            # クリック前のページが古くなるまで待つ
             WebDriverWait(DRIVER, 30).until(staleness_of(old_page))
 
 
@@ -837,8 +842,8 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 0:
             icon_name0 = icon_image_name_list[0][1]
             product_list.extend([icon_name0])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[0][0], 'kaientai-icon', icon_name0)
+            imagefile.download_and_save_dir_direct(
+                icon_image_name_list[0][0], 'kaientai-icon', icon_name0, kaientai_cookie)
         else:
             product_list.extend([''])
 
@@ -963,6 +968,33 @@ if __name__ == '__main__':
         CSVFILE.writerow(product_list)
 
         COMPLETE_FILE.write(product_url + ',' + product_category + '\n')
+
+        # コンテキストメニューの処理
+        actionChains = ActionChains(DRIVER)
+        try:
+            click_element = DRIVER.find_element_by_xpath("//div[@id='up']")
+        except NoSuchElementException:
+            break
+
+        # click_element.click()
+
+        # body = DRIVER.find_element_by_tag_name("body")
+        # body.send_keys(Keys.LEFT_CONTROL, "s")
+        # time.sleep(2)
+        # save_as = actionChains.move_to_element(click_element).key_down(Keys.CONTROL).send_keys('s')
+        # save_as.perform()
+        # time.sleep(5)
+        actionChains.move_to_element(click_element).context_click(click_element).perform()
+        actionChains.send_keys(Keys.RETURN).perform()
+        actionChains.send_keys(Keys.ARROW_DOWN).perform()
+        #actionChains.send_keys(Keys.ARROW_DOWN).perform()
+        #actionChains.send_keys(Keys.ARROW_DOWN).perform()
+        #actionChains.send_keys(Keys.ARROW_DOWN).perform()
+        # actionChains.context_click(click_element)
+        # actionChains.key_down(Keys.CONTROL).send_keys('s').key_up(Keys.CONTROL).perform()
+        # save_text = DRIVER.find_element_by_partial_link_text("名前を")
+        # save_text.click()
+        # actionChains.send_keys(Keys.RETURN).perform()
 
         # アイコン画像の保存
         # for url in icon_url_list:

@@ -4,6 +4,7 @@ u"""イメージファイルをダウンロードしてファイルに保存す�
 import os
 import unittest
 import shutil
+import urllib
 import requests
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -96,7 +97,7 @@ def download_and_save(url, image_dir, image_file_name):
                 IMAGE_SERIAL_NUMBER = IMAGE_SERIAL_NUMBER + 1
 
 
-def download_and_save_dir_direct(url, image_dir, image_file_name):
+def download_and_save_dir_direct(url, image_dir, image_file_name, cookies):
     u"""
     目的 : urlを受け取りページにアクセスしてイメージファイルを
            ダウンロードする。
@@ -124,8 +125,13 @@ def download_and_save_dir_direct(url, image_dir, image_file_name):
         )
 
     # イメージファイルを取得する
+    urllib.URLopener.version = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36 SE 2.X MetaSr 1.0'
+    # headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)"
+    #                         "AppleWebKit 537.36 (KHTML, like Gecko) Chrome",
+    #           "Accept": "text/html,application/xhtml+xml,application/xml;"
+    #                     "q=0.9,image/webp,*/*;q=0.8"}
     try:
-        local_filename = urlretrieve(url, image_file_path)
+        local_filename = urllib.urlretrieve(url, image_file_path)
     except HTTPError as error_code:
         logmessage.logprint('HTTPError')
         logmessage.logprint(url)

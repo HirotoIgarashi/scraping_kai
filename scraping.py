@@ -56,6 +56,22 @@ def get_phantom_driver():
     return driver
 
 
+def get_firefox_driver():
+    u"""firefoxのドライバーを取得する。
+    """
+    try:
+        driver = webdriver.Firefox()
+    except URLError as error_code:
+        logprint(error_code)
+        return None
+    except WebDriverException as error_code:
+        logprint(error_code)
+        return None
+    print(type(driver))
+
+    return driver
+
+
 class Scraping():
     u"""Scrapingクラス
     メソッド:
@@ -82,9 +98,13 @@ class Scraping():
              .PHANTOMJS['phantomjs.page.customHeaders.{}'.format(key)]) = value
 
         self.driver = get_phantom_driver()
+        # self.driver = get_firefox_driver()
         if self.driver is not None:
             self.product_driver = get_phantom_driver()
+            # self.product_driver = get_firefox_driver()
             self.link_driver = get_phantom_driver()
+            # self.product_driver = get_firefox_driver()
+
 
     def get_page(self, url=None):
         """
@@ -318,7 +338,6 @@ class Scraping():
             * input_list: [xpath, 値]となっている。
         """
         for value in input_list:
-            # element = self.driver.find_element_by_xpath(value[0])
             try:
                 element = self.driver.find_element_by_name(value[0])
             except NoSuchElementException:
@@ -674,7 +693,7 @@ class FactorialTest(unittest.TestCase):
     def setUp(self):
         u"""セットアップ
         """
-        self.scraping = Scraping('http://www.kaientai.cc/Default.aspx')
+        self.scraping = Scraping('https://www.kaientai.cc/')
 
     def test_get_page(self):
         u"""pageを取得するテスト
@@ -723,7 +742,7 @@ class FactorialTest(unittest.TestCase):
         links = self.scraping.get_attribute_list_by_xpath(xpath, attribute)
 
         for link in links:
-            if link.startswith("http://www.kaientai.cc/listword.aspx?ccd="):
+            if link.startswith("https://www.kaientai.cc/listword.aspx?ccd="):
                 pass
 
         self.assertEqual(len(links), 226)
@@ -733,7 +752,7 @@ class FactorialTest(unittest.TestCase):
         """
         xpath = "//a[@href]"
         attribute = "href"
-        pattern = "http://www.kaientai.cc/listword.aspx?ccd="
+        pattern = "https://www.kaientai.cc/listword.aspx?ccd="
         self.scraping.get_page()
         links = self.scraping.get_link_and_text_list(xpath, attribute, pattern)
 
@@ -753,7 +772,7 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 10件だけデータがあるページ
-        self.scraping.get_page("http://www.kaientai.cc/listword.aspx?ccd=0209")
+        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0209")
         next_link = self.scraping.get_next_link(active_element_xpath)
 
         self.assertTrue(next_link)
@@ -764,7 +783,7 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("http://www.kaientai.cc/listword.aspx?ccd=0202")
+        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
         next_link = self.scraping.get_next_link(active_element_xpath)
 
         self.assertTrue(next_link)
@@ -775,7 +794,7 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("http://www.kaientai.cc/listword.aspx?ccd=0202")
+        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
         next_link = self.scraping.get_next_link(active_element_xpath)
         while next_link.text != '>>':
             self.scraping.execute_link_click_by_element(next_link)
@@ -788,7 +807,7 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("http://www.kaientai.cc/listword.aspx?ccd=0202")
+        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
         product_list = []
         while True:
             product_list.extend(
@@ -812,181 +831,11 @@ class FactorialTest(unittest.TestCase):
     #     else:
     #         self.assertEqual(len(product_list), 174)
 
-    # def test_not_find_product(self):
-    #     u"""商品情報を取得するテスト
-    #     """
-    #     url = 'http://store.shopping.yahoo.co.jp/drmart-1/cm-200000.html'
-    #     product_list = self.scraping.get_product_info(url)
-
-    #     self.assertEqual(product_list, None)
-
-    # def test_get_product_info_cm(self):
-    #     u"""商品情報を取得するテスト
-    #     """
-    #     url = 'http://store.shopping.yahoo.co.jp/drmart-1/cm-218372.html'
-    #     product_list = self.scraping.get_product_info(url)
-
-    #     if product_list is None:
-    #         self.assertEqual(product_list, None)
-    #     else:
-    #         self.assertEqual(len(product_list), 174)
-    #         self.assertEqual(product_list[5], 'cm-218372')
-
-    # def test_execute_link_click(self):
-    #     u"""在庫照会をクリックして検索画面に遷移するテスト
-    #     """
-    #     url = 'https://cust.sanwa.co.jp/'
-    #     page = self.scraping.get_page(self.scraping.driver, url)
-
-    #     login_div = "//div[@class='login_inaccount']"
-    #     login_dict = {
-    #         'login_id': 'health-welfare@ghjapan.jp',
-    #         'login_id_name': 'MailAddress',
-    #         'password': 'ghjapan006',
-    #         'password_name': 'PassWord',
-    #         'submit_path': login_div + "/p/a"
-    #     }
-
-    #     self.scraping.execute_login(self.scraping.driver, login_dict)
-    #     data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
-
-    #     page = self.scraping.execute_link_click(
-    #         self.scraping.driver, "//li/p/a/img[@alt='在庫照会']")
-    #     data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
-
-    #     self.assertTrue(data.startswith('<body'))
-
-    # def test_execute_search(self):
-    #     u"""検索画面に値をセットして検索を実行するテスト
-    #     """
-    #     url = 'https://cust.sanwa.co.jp/'
-    #     page = self.scraping.get_page(url)
-
-    #     login_div = "//div[@class='login_inaccount']"
-    #     login_dict = {
-    #         'login_id': "health-welfare@ghjapan.jp",
-    #         'login_id_path': login_div + "/p/input[@id='MailAddress']",
-    #         'password': "ghjapan006",
-    #         'password_path': login_div + "/p/input[@id='PassWord']",
-    #         'submit_path': login_div + "/p/a"
-    #     }
-
-    #     self.scraping.execute_login(login_dict)
-    #     data = page.find_element_by_xpath(
-    #         '//body').get_attribute('outerHTML')
-
-    #     page = self.scraping.execute_link_click("//li/p/a/img[@alt='在庫照会']")
-
-    #     input_list = [
-    #         ["sProductCode", '-'], ["sProductName", ''],
-    #         ["sJanCode", ''], ["sInventory", ''],
-    #         ["sRegularPrice_Under", ''], ["sRegularPrice_TOP", ''],
-    #         ["InAbolish", ''], ["DispImg", '']
-    #     ]
-
-    #     submit_path = "//img[@alt='この条件で検索']"
-
-    #     page = self.scraping.execute_search(input_list, submit_path)
-
-    #     self.scraping.get_page_information("//p[@class='result_amount']")
-
-    #     self.assertTrue(data.startswith('<body'))
-
-    # def test_is_link_enable(self):
-    #     u"""「次のページへ」というリンクがあるかチェックする。
-    #     """
-    #     url = 'https://cust.sanwa.co.jp/'
-    #     page = self.scraping.get_page(url)
-
-    #     login_div = "//div[@class='login_inaccount']"
-    #     login_dict = {
-    #         'login_id': "health-welfare@ghjapan.jp",
-    #         'login_id_path': login_div + "/p/input[@id='MailAddress']",
-    #         'password': "ghjapan006",
-    #         'password_path': login_div + "/p/input[@id='PassWord']",
-    #         'submit_path': login_div + "/p/a"
-    #     }
-
-    #     self.scraping.execute_login(login_dict)
-    #     # data = page.find_element_by_xpath(
-    #     #     '//body').get_attribute('outerHTML')
-
-    #     page = self.scraping.execute_link_click("//li/p/a/img[@alt='在庫照会']")
-
-    #     input_list = [
-    #         ["sProductCode", '-'], ["sProductName", ''],
-    #         ["sJanCode", ''], ["sInventory", ''],
-    #         ["sRegularPrice_Under", ''], ["sRegularPrice_TOP", ''],
-    #         ["InAbolish", ''], ["DispImg", '']
-    #     ]
-
-    #     submit_path = "//img[@alt='この条件で検索']"
-
-    #     page = self.scraping.execute_search(input_list, submit_path)
-
-    #     if page is not None:
-    #         print(page)
-    #     #     data = page.find_element_by_xpath(
-    #     #         '//body').get_attribute('outerHTML')
-    #     #     print(data)
-    #     else:
-    #         print('見つからなかった')
-
-    #     self.scraping.get_page_information("//p[@class='result_amount']")
-
-    #     self.assertTrue(self.scraping.is_link_enable("次のページへ"))
-    #     self.assertFalse(self.scraping.is_link_enable("Next Page"))
-
-    # def test_get_next_link(self):
-    #     u"""「次のページへ」というリンクをクリックする。
-    #     """
-    #     url = 'https://cust.sanwa.co.jp/'
-    #     page = self.scraping.get_page(url)
-
-    #     login_div = "//div[@class='login_inaccount']"
-    #     login_dict = {
-    #         'login_id': "health-welfare@ghjapan.jp",
-    #         'login_id_path': login_div + "/p/input[@id='MailAddress']",
-    #         'password': "ghjapan006",
-    #         'password_path': login_div + "/p/input[@id='PassWord']",
-    #         'submit_path': login_div + "/p/a"
-    #     }
-
-    #     self.scraping.execute_login(login_dict)
-    #     # data = page.find_element_by_xpath(
-    #     #     '//body').get_attribute('outerHTML')
-
-    #     page = self.scraping.execute_link_click("//li/p/a/img[@alt='在庫照会']")
-
-    #     input_list = [
-    #         ["sProductCode", '-'], ["sProductName", ''],
-    #         ["sJanCode", ''], ["sInventory", ''],
-    #         ["sRegularPrice_Under", ''], ["sRegularPrice_TOP", ''],
-    #         ["InAbolish", ''], ["DispImg", '']
-    #     ]
-
-    #     submit_path = "//img[@alt='この条件で検索']"
-
-    #     page = self.scraping.execute_search(input_list, submit_path)
-
-    #     if page is not None:
-    #         print(page)
-    #     #     data = page.find_element_by_xpath(
-    #     #         '//body').get_attribute('outerHTML')
-    #     #     print(data)
-    #     else:
-    #         print('見つからなかった')
-
-    #     self.scraping.get_page_information("//p[@class='result_amount']")
-
-    #     while self.scraping.is_link_enable("次のページへ"):
-    #         self.scraping.get_next_page("次のページへ")
-    #         self.scraping.get_page_information("//p[@class='result_amount']")
 
     def tearDown(self):
         u"""クローズ処理など
         """
-        pass
+        self.scraping.driver.quit()
 
 if __name__ == '__main__':
     unittest.main()
