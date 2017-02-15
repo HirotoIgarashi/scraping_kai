@@ -284,7 +284,7 @@ if __name__ == '__main__':
                 break
 
             # クリック前のページ
-            old_page = DRIVER.find_element_by_tag_name('html')
+            old_page = KAIENTAI.find_element_by_tag_name('html')
 
             KAIENTAI.execute_link_click_by_element(next_link)
 
