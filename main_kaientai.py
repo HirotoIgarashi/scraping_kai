@@ -284,12 +284,12 @@ if __name__ == '__main__':
                 break
 
             # クリック前のページ
-            old_page = KAIENTAI.find_element_by_tag_name('html')
+            old_page = category_page.find_element_by_tag_name('html')
 
             KAIENTAI.execute_link_click_by_element(next_link)
 
             # クリック前のページが古くなるまで待つ
-            WebDriverWait(DRIVER, 30).until(staleness_of(old_page))
+            WebDriverWait(category_page, 30).until(staleness_of(old_page))
 
         logprint(str(url_count) + '件の商品のURLを保存しました。')
 
@@ -330,7 +330,6 @@ if __name__ == '__main__':
             )
         except NoSuchElementException:
             pass
-            lbl_goods_name = ''
         else:
             logprint(product_url + 'がデータベースにないためスキップします。')
             continue
@@ -467,9 +466,12 @@ if __name__ == '__main__':
         # 17 項目1: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
         option_list = []
-        option_list = product_page.find_elements_by_xpath(
-            "//select[@name='ctl00$MainContent$ddl属性1']/option"
-        )
+        try:
+            option_list = product_page.find_elements_by_xpath(
+                "//select[@name='ctl00$MainContent$ddl属性1']/option"
+            )
+        except WebDriverException:
+            pass
 
         option_text = ''
         for option in option_list:
