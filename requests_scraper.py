@@ -19,6 +19,11 @@ class RequestsScraper():
         """
         self.requests.headers.update(user_agent)
 
+    def set_referer(self, referer):
+        """リクエストヘッダーのUser-Agentを更新する
+        """
+        self.requests.headers.update(referer)
+
     def fetch(self, url):
         """ページを取得する
         """
@@ -86,6 +91,20 @@ class FatorialTest(unittest.TestCase):
         print(self.response.request.headers)
 
         self.assertEqual(self.response.status_code, 404)
+
+    def test_set_useragent_referer(self):
+        """一覧ページを取得する
+        """
+        url = 'https://www.kaientai.cc/images/products/298761.jpg'
+        self.requests.set_user_agent({
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'})
+        self.requests.set_referer({
+            'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'})
+        self.response = self.requests.fetch(url)
+
+        print(self.response.request.headers)
+
+        self.assertEqual(self.response.status_code, 200)
 
     def tearDown(self):
         u"""ファイルをクローズする。
