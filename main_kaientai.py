@@ -168,7 +168,7 @@ if __name__ == '__main__':
     KAIENTAI = kaientai.Kaientai(URL)
 
     # ログイン処理
-    KAIENTAI.get_page()
+    CURRENT_PAGE = KAIENTAI.get_page()
     KAIENTAI.execute_login(LOGIN_DICT)
 
     # カテゴリファイルがあるかを判定する。
@@ -251,6 +251,7 @@ if __name__ == '__main__':
 
         logprint(category_link[0] + ":" + category_link[1])
         category_page = KAIENTAI.get_page(category_link[0])
+        CURRENT_PAGE = category_page
         lbl_count = KAIENTAI.get_text_by_xpath(category_page, '//span[@id="MainContent_lblCount"]')
         logprint(lbl_count + "件の商品が見つかりました。")
 
@@ -320,8 +321,16 @@ if __name__ == '__main__':
 
         webcd = ''
 
+        # クリック前のページ
+        old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
+
+        # 商品毎のページを取得する。
         logprint(product_url)
         product_page = KAIENTAI.get_page(product_url)
+        CURRENT_PAGE = product_page
+
+        # 前のページが古くなるまで待つ
+        WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
 
         # ご指定の商品がデータベースにありません。の場合の処理
         try:
@@ -350,11 +359,17 @@ if __name__ == '__main__':
             "//span[@id='MainContent_lblCategory']/a"
         )
 
-        product_list.extend([lbl_category[1].get_attribute('innerHTML')])
+        if len(lbl_category) > 1:
+            product_list.extend([lbl_category[1].get_attribute('innerHTML')])
+        else:
+            product_list.extend([''])
 
         # 05 カテゴリ2:
         # パンクズリストのトップページ > 入浴関連 > の次のカテゴリ
-        product_list.extend([lbl_category[2].get_attribute('innerHTML')])
+        if len(lbl_category) > 2:
+            product_list.extend([lbl_category[2].get_attribute('innerHTML')])
+        else:
+            product_list.extend([''])
 
         # 06 カテゴリ3: 空欄
         product_list.extend([''])

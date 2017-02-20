@@ -15,7 +15,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 # My library
 from logmessage import logprint
@@ -35,15 +35,28 @@ def write_not_find_page_url(url):
 def get_phantom_driver():
     u"""phantomJSのドライバーを取得する。
     """
+    dcap = dict(DesiredCapabilities.PHANTOMJS)
+    dcap["phantomjs.page.settings.userAgent"] = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) "
+        "AppleWebKit 537.36 (KHTML, like Gecko) Chrome"
+    )
+    dcap["phantomjs.page.settings.accept"] = (
+        "text/html,application/xhtml+xml,application/xml;"
+        "q=0.9,image/webp,*/*;q=0.8"
+    )
+
     try:
         if os.name == 'posix':
             driver = webdriver.PhantomJS(
-                executable_path='lib/phantomjs')
+                executable_path='lib/phantomjs',
+                desired_capabilities=dcap)
         elif os.name == 'nt':
             driver = webdriver.PhantomJS(
-                executable_path='lib/phantomjs.exe')
+                executable_path='lib/phantomjs.exe',
+                desired_capabilities=dcap)
         else:
             logprint('Unsupported OS')
+
     except URLError as error_code:
         logprint('ドライバーの取得に失敗しました。')
         logprint(error_code)
@@ -81,29 +94,44 @@ class Scraping():
         * get_attribute_list_by_xpath(self, xpath, attribute, driver=None)
     """
     def __init__(self, base_url):
-        headers = (
-            {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)"
-                           "AppleWebKit 537.36 (KHTML, like Gecko) Chrome",
-             "Accept": "text/html,application/xhtml+xml,application/xml;"
-                       "q=0.9,image/webp,*/*;q=0.8"})
+        # dcap = dict(DesiredCapabilities.PHANTOMJS)
+        # dcap["phantomjs.page.settings.userAgent"] = (
+        #     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) "
+        #     "AppleWebKit 537.36 (KHTML, like Gecko) Chrome"
+        # )
+        # dcap["phantomjs.page.settings.accept"] = (
+        #     "text/html,application/xhtml+xml,application/xml;"
+        #     "q=0.9,image/webp,*/*;q=0.8"
+        # )
 
         self.page_list = []
         self.product_page_list = []
 
         self.base_url = base_url
 
-        for key, value in enumerate(headers):
-            (webdriver
-             .DesiredCapabilities
-             .PHANTOMJS['phantomjs.page.customHeaders.{}'.format(key)]) = value
+        # try:
+        #     if os.name == 'posix':
+        #         self.driver = webdriver.PhantomJS(
+        #             executable_path='lib/phantomjs',
+        #             desired_capabilities=dcap)
+        #     elif os.name == 'nt':
+        #         self.driver = webdriver.PhantomJS(
+        #             executable_path='lib/phantomjs.exe',
+        #             desired_capabilities=dcap)
+        #     else:
+        #         logprint('Unsupported OS')
+        # except URLError as error_code:
+        #     logprint('ドライバーの取得に失敗しました。')
+        #     logprint(error_code)
+        #     return None
+        # except WebDriverException as error_code:
+        #     logprint('PhantomJSのサービスとの接続に失敗しました。')
+        #     logprint('libディレクトリにPhantomJSの実行ファイルが必要です。')
 
         self.driver = get_phantom_driver()
-        # self.driver = get_firefox_driver()
         if self.driver is not None:
             self.product_driver = get_phantom_driver()
-            # self.product_driver = get_firefox_driver()
             self.link_driver = get_phantom_driver()
-            # self.product_driver = get_firefox_driver()
 
 
     def get_page(self, url=None):
@@ -114,10 +142,10 @@ class Scraping():
         if url is None:
             url = self.base_url
 
-        driver = self.driver
+        # driver = self.driver
 
         try:
-            driver.get(url)
+            self.driver.get(url)
         except HTTPError as error_code:
             logprint(url)
             logprint(error_code)
@@ -135,7 +163,15 @@ class Scraping():
             logprint(error_code)
             return None
 
-        return driver
+        # リクエストヘッダ確認するときのコード
+        # cap_dict = self.driver.desired_capabilities
+        # key = 'phantomjs.page.settings.userAgent'
+        # print('%s: %s' % (key, cap_dict[key]))
+        # key = 'phantomjs.page.settings.accept'
+        # print('%s: %s' % (key, cap_dict[key]))
+        # print(self.driver.current_url)
+
+        return self.driver
 
     def execute_login(self, login_dict, driver=None):
         u"""
@@ -745,7 +781,7 @@ class FactorialTest(unittest.TestCase):
             if link.startswith("https://www.kaientai.cc/listword.aspx?ccd="):
                 pass
 
-        self.assertEqual(len(links), 226)
+        self.assertEqual(len(links), 234)
 
     def test_get_link_and_text(self):
         u"""link先URLとテキストを取得するテスト
@@ -819,18 +855,6 @@ class FactorialTest(unittest.TestCase):
             self.scraping.execute_link_click_by_element(next_link)
 
         self.assertEqual(len(product_list), 21)
-
-    # def test_get_product_info(self):
-    #     u"""商品情報を取得するテスト
-    #     """
-    #     url = 'http://store.shopping.yahoo.co.jp/drmart-1/cm-234176.html'
-    #     product_list = self.scraping.get_product_info(url)
-
-    #     if product_list is None:
-    #         self.assertEqual(product_list, None)
-    #     else:
-    #         self.assertEqual(len(product_list), 174)
-
 
     def tearDown(self):
         u"""クローズ処理など

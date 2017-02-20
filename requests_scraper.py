@@ -49,71 +49,88 @@ class FatorialTest(unittest.TestCase):
         介援隊のページ
         """
         url = 'https://www.kaientai.cc/'
-        self.response = self.requests.fetch(url)
+        response = self.requests.fetch(url)
 
-        self.assertIsInstance(self.response, requests.models.Response)
-        self.assertEqual(self.response.status_code, 200)
+        self.assertIsInstance(response, requests.models.Response)
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
 
     def test_fetch_list_page(self):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/listword.aspx?ccd=0101'
-        self.response = self.requests.fetch(url)
+        response = self.requests.fetch(url)
 
-        self.assertEqual(self.response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
 
     def test_fetch_detail_page(self):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/goods.aspx?webcd=298761'
-        self.response = self.requests.fetch(url)
+        response = self.requests.fetch(url)
 
-        self.assertEqual(self.response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
+        # response.raw.close()
 
     def test_fetch_image_not_found(self):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
-        self.response = self.requests.fetch(url)
+        response = self.requests.fetch(url)
 
-        print(self.response.request.headers)
+        self.assertEqual(response.status_code, 404)
 
-        self.assertEqual(self.response.status_code, 404)
+        response.close()
+        response.connection.close()
 
     def test_set_user_agent(self):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
         self.requests.set_user_agent({
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'})
-        self.response = self.requests.fetch(url)
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/55.0.2883.87 Safari/537.36"})
+        response = self.requests.fetch(url)
 
-        print(self.response.request.headers)
+        print(response.request.headers)
 
-        self.assertEqual(self.response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
+
+        response.close()
+        response.connection.close()
 
     def test_set_useragent_referer(self):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
         self.requests.set_user_agent({
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'})
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/55.0.2883.87 Safari/537.36"})
         self.requests.set_referer({
             'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'})
-        self.response = self.requests.fetch(url)
+        response = self.requests.fetch(url)
 
-        print(self.response.request.headers)
+        print(response.request.headers)
 
-        self.assertEqual(self.response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
 
     def tearDown(self):
         u"""ファイルをクローズする。
         """
-        self.response.connection.close()
-        self.response.close()
-        self.response.raw.close()
-        # self.response.close()
-        # pass
+        pass
 
 if __name__ == '__main__':
     unittest.main()
