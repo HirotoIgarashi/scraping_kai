@@ -13,8 +13,7 @@ from selenium.common.exceptions import WebDriverException
 # import time
 # My library
 from logmessage import logprint
-import kaientai
-# import imagefile
+import scraping
 import textfile
 import csvfile
 # import imagefile
@@ -165,11 +164,11 @@ if __name__ == '__main__':
     COMPLETE_OBJ = textfile.TextFile(RESULT_DIR, COMPLETE_PRODUCT_FILE_NAME)
 
     # Sanwachannelクラスの初期化
-    KAIENTAI = kaientai.Kaientai(URL)
+    SCRAPING = scraping.Scraping(URL)
 
     # ログイン処理
-    CURRENT_PAGE = KAIENTAI.get_page()
-    KAIENTAI.execute_login(LOGIN_DICT)
+    CURRENT_PAGE = SCRAPING.get_page()
+    SCRAPING.execute_login(LOGIN_DICT)
 
     # カテゴリファイルがあるかを判定する。
     if os.path.isfile(RESULT_DIR + '/' + CATEGORY_FILE_NAME):
@@ -201,7 +200,7 @@ if __name__ == '__main__':
         XPATH = "//a[@href]"
         ATTRIBUTE = "href"
         PATTERN = "https://www.kaientai.cc/listword.aspx?ccd="
-        CATEGORY_LINKS = KAIENTAI.get_link_and_text_list(XPATH, ATTRIBUTE, PATTERN)
+        CATEGORY_LINKS = SCRAPING.get_link_and_text_list(XPATH, ATTRIBUTE, PATTERN)
 
         for link in CATEGORY_LINKS:
             # * カテゴリリストに格納する。
@@ -250,9 +249,9 @@ if __name__ == '__main__':
             continue
 
         logprint(category_link[0] + ":" + category_link[1])
-        category_page = KAIENTAI.get_page(category_link[0])
+        category_page = SCRAPING.get_page(category_link[0])
         CURRENT_PAGE = category_page
-        lbl_count = KAIENTAI.get_text_by_xpath(category_page, '//span[@id="MainContent_lblCount"]')
+        lbl_count = SCRAPING.get_text_by_xpath(category_page, '//span[@id="MainContent_lblCount"]')
         logprint(lbl_count + "件の商品が見つかりました。")
 
         # アクティブな要素がなくなるまでループする
@@ -262,7 +261,7 @@ if __name__ == '__main__':
         url_count = 0
         while True:
             # 商品のwebcdを取得する。1ページにつき10個の商品
-            webcd_list = KAIENTAI.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
+            webcd_list = SCRAPING.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
             for webcd in webcd_list:
                 product_record = webcd + ',' + category_link[1]
 
@@ -272,7 +271,7 @@ if __name__ == '__main__':
                 url_count += 1
 
             # アクティブな要素の次の要素をクリック
-            next_link = KAIENTAI.get_next_link(active_element_xpath)
+            next_link = SCRAPING.get_next_link(active_element_xpath)
 
             # whileループの終了条件
             # シューズカテゴリの590ページの次へをクリックすると
@@ -287,7 +286,7 @@ if __name__ == '__main__':
             # クリック前のページ
             old_page = category_page.find_element_by_tag_name('html')
 
-            KAIENTAI.execute_link_click_by_element(next_link)
+            SCRAPING.execute_link_click_by_element(next_link)
 
             # クリック前のページが古くなるまで待つ
             WebDriverWait(category_page, 30).until(staleness_of(old_page))
@@ -326,7 +325,7 @@ if __name__ == '__main__':
 
         # 商品毎のページを取得する。
         logprint(product_url)
-        product_page = KAIENTAI.get_page(product_url)
+        product_page = SCRAPING.get_page(product_url)
         CURRENT_PAGE = product_page
 
         # 前のページが古くなるまで待つ
@@ -451,7 +450,8 @@ if __name__ == '__main__':
 
         # この商品はお見積り商品になりますの場合の処理
         if cost_text.startswith('この商品は'):
-            product_list.extend([cost])
+            cost_text = cost_text.split('（')[0]
+            product_list.extend([cost_text])
 
         # この商品はお見積り商品になりますの場合の処理
         elif '円' in cost_text:
@@ -678,7 +678,7 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 商品画像
-        up_image_list = KAIENTAI.get_attribute_list_by_xpath(
+        up_image_list = SCRAPING.get_attribute_list_by_xpath(
             "//div[@id='up']/img", 'src'
         )
         image_name_list = []
@@ -755,7 +755,7 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # アイコン画像
-        icon_image_list = KAIENTAI.get_attribute_list_by_xpath(
+        icon_image_list = SCRAPING.get_attribute_list_by_xpath(
             "//div[@id='r-icon']/img", 'src'
         )
         icon_image_name_list = []
@@ -970,7 +970,7 @@ if __name__ == '__main__':
         # アイコン画像の保存
         # for url in icon_url_list:
         #     print(url)
-        #     icon_image = KAIENTAI.get_page(url)
+        #     icon_image = SCRAPING.get_page(url)
         #     print(type(icon_image))
         #     print(icon_image.find_element_by_xpath("//body").get_attribute('innerHTML'))
 
