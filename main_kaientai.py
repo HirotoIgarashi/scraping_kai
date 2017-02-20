@@ -449,16 +449,22 @@ if __name__ == '__main__':
         else:
             pass
 
-        decimal_search = re.findall(r"\d+", cost_text)
+        # この商品はお見積り商品になりますの場合の処理
+        if cost_text.startswith('この商品は'):
+            product_list.extend([cost])
 
-        if len(decimal_search) == 0:
-            decimal_search = [cost_text]
+        # この商品はお見積り商品になりますの場合の処理
+        elif '円' in cost_text:
+            cost_text = cost_text.split('円')[0]
+            decimal_search = re.findall(r"\d+", cost_text)
+            cost = ''
+            for decimal in decimal_search:
+                cost += decimal
+            product_list.extend([cost])
 
-        cost = ''
-        for decimal in decimal_search:
-            cost += decimal
-
-        product_list.extend([cost])
+        # 卸売価格がない場合の処理
+        else:
+            product_list.extend([''])
 
         # 14 掛率: 空欄
         product_list.extend([''])
