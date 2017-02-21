@@ -127,6 +127,28 @@ class FatorialTest(unittest.TestCase):
         response.close()
         response.connection.close()
 
+    def test_save_image(self):
+        """一覧ページを取得する
+        """
+        url = 'https://www.kaientai.cc/images/products/298761.jpg'
+        self.requests.set_user_agent({
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/55.0.2883.87 Safari/537.36"})
+        self.requests.set_referer({
+            'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'})
+        response = self.requests.fetch(url)
+
+        if response.status_code == 200:
+            with open('test.jpg', 'wb') as f:
+                for chunk in response.iter_content(1024):
+                    f.write(chunk)
+
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
+
     def tearDown(self):
         u"""ファイルをクローズする。
         """
