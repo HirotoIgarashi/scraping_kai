@@ -324,8 +324,8 @@ if __name__ == '__main__':
         old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
 
         # 商品毎のページを取得する。
-        logprint(product_url)
         product_page = SCRAPING.get_page(product_url)
+        logprint(product_page.current_url)
         CURRENT_PAGE = product_page
 
         # 前のページが古くなるまで待つ
@@ -341,6 +341,28 @@ if __name__ == '__main__':
         else:
             logprint(product_url + 'がデータベースにないためスキップします。')
             continue
+
+        # ログインされているかのチェック。仕切価があるを確認する。
+        try:
+            cost_text = product_page.find_element_by_xpath(
+                "//span[@id='MainContent_lblCost']"
+            ).text
+        except NoSuchElementException:
+            # ログイン処理
+            CURRENT_PAGE = SCRAPING.get_page()
+            SCRAPING.execute_login(LOGIN_DICT)
+            # クリック前のページ
+            old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
+
+            # 商品毎のページを取得する。
+            product_page = SCRAPING.get_page(product_url)
+            logprint(product_page.current_url)
+            CURRENT_PAGE = product_page
+
+            # 前のページが古くなるまで待つ
+            WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
+        else:
+            pass
 
         # 01 ID: URLに表示されるwebcdを取得
         webcd_search = re.search(r"\d+", product_url)
