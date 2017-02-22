@@ -35,7 +35,8 @@ def write_not_find_page_url(url):
 def get_phantom_driver():
     u"""phantomJSのドライバーを取得する。
     """
-    dcap = dict(DesiredCapabilities.PHANTOMJS)
+    # dcap = dict(DesiredCapabilities.PHANTOMJS)
+    dcap = DesiredCapabilities.FIREFOX.copy()
     dcap["phantomjs.page.settings.userAgent"] = (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) "
         "AppleWebKit 537.36 (KHTML, like Gecko) Chrome"
@@ -94,39 +95,11 @@ class Scraping():
         * get_attribute_list_by_xpath(self, xpath, attribute, driver=None)
     """
     def __init__(self, base_url):
-        # dcap = dict(DesiredCapabilities.PHANTOMJS)
-        # dcap["phantomjs.page.settings.userAgent"] = (
-        #     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) "
-        #     "AppleWebKit 537.36 (KHTML, like Gecko) Chrome"
-        # )
-        # dcap["phantomjs.page.settings.accept"] = (
-        #     "text/html,application/xhtml+xml,application/xml;"
-        #     "q=0.9,image/webp,*/*;q=0.8"
-        # )
 
         self.page_list = []
         self.product_page_list = []
 
         self.base_url = base_url
-
-        # try:
-        #     if os.name == 'posix':
-        #         self.driver = webdriver.PhantomJS(
-        #             executable_path='lib/phantomjs',
-        #             desired_capabilities=dcap)
-        #     elif os.name == 'nt':
-        #         self.driver = webdriver.PhantomJS(
-        #             executable_path='lib/phantomjs.exe',
-        #             desired_capabilities=dcap)
-        #     else:
-        #         logprint('Unsupported OS')
-        # except URLError as error_code:
-        #     logprint('ドライバーの取得に失敗しました。')
-        #     logprint(error_code)
-        #     return None
-        # except WebDriverException as error_code:
-        #     logprint('PhantomJSのサービスとの接続に失敗しました。')
-        #     logprint('libディレクトリにPhantomJSの実行ファイルが必要です。')
 
         self.driver = get_phantom_driver()
         if self.driver is not None:
@@ -163,7 +136,7 @@ class Scraping():
             logprint(error_code)
             return None
 
-        # リクエストヘッダ確認するときのコード
+        # リクエストヘッダを確認するときのコード
         # cap_dict = self.driver.desired_capabilities
         # key = 'phantomjs.page.settings.userAgent'
         # print('%s: %s' % (key, cap_dict[key]))
