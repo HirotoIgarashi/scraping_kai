@@ -4,19 +4,16 @@ u"""Webスクレイピング用のコード
 """
 import os
 import re
-# import time
 from datetime import datetime
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.expected_conditions import staleness_of
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import WebDriverException
-# import time
 # My library
 from logmessage import logprint
 import scraping
 import textfile
 import csvfile
-# import imagefile
 
 URL = 'https://www.kaientai.cc/Default.aspx'
 
@@ -312,7 +309,22 @@ if __name__ == '__main__':
         except WebDriverException:
             pass
         else:
-            pass
+            logprint(cost_text)
+            if cost_text == '':
+                # ログイン処理
+                CURRENT_PAGE = SCRAPING.get_page()
+                SCRAPING.execute_login(LOGIN_DICT)
+                # クリック前のページ
+                old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
+
+                # 商品毎のページを取得する。
+                product_page = SCRAPING.get_page(product_url)
+                logprint(product_page.current_url)
+                CURRENT_PAGE = product_page
+
+                # 前のページが古くなるまで待つ
+                WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
+
 
         # 01 ID: URLに表示されるwebcdを取得
         webcd_search = re.search(r"\d+", product_url)
