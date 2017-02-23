@@ -365,7 +365,7 @@ if __name__ == '__main__':
             lbl_goods_name = product_page.find_element_by_xpath(
                 "//span[@id='MainContent_lblGoodsName']"
             ).get_attribute('innerHTML')
-
+            lbl_goods_name = lbl_goods_name.replace('&amp;', '&')
         except NoSuchElementException:
             lbl_goods_name = ''
         except WebDriverException:
