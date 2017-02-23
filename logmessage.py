@@ -28,11 +28,15 @@ def logprint(message):
 
     message = str(message)
 
+    YYYY = str(datetime.now().year)
+
     # MM
+    MM = str(datetime.now().month)
     if len(MM) == 1:
         MM = '0' + MM
 
     # DD
+    DD = str(datetime.now().day)
     if len(DD) == 1:
         DD = '0' + DD
 
@@ -80,13 +84,13 @@ class FactorialTest(unittest.TestCase):
         u"""端末に'test'を表示しlogに書き込むテスト
         """
         logprint('test')
-        self.assertTrue(os.path.exists('log/2016-7-9.log'))
+        self.assertTrue(os.path.exists('log/2017-2-23.log'))
 
     def test_encoding(self):
         u"""ファイルのエンコーディングをテスト
         """
         logprint('test')
-        file_handler = open('log/2016-7-9.log', 'r')
+        file_handler = open('log/2017-2-23.log', 'r')
         self.assertTrue(file_handler.encoding, 'utf-8')
         file_handler.close()
 

@@ -36,15 +36,23 @@ def get_phantom_driver():
     u"""phantomJSのドライバーを取得する。
     """
     # dcap = dict(DesiredCapabilities.PHANTOMJS)
-    dcap = DesiredCapabilities.FIREFOX.copy()
-    dcap["phantomjs.page.settings.userAgent"] = (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) "
-        "AppleWebKit 537.36 (KHTML, like Gecko) Chrome"
+    # dcap = DesiredCapabilities.FIREFOX.copy()
+    dcap = DesiredCapabilities.PHANTOMJS
+    dcap['phantomjs.page.settings.accept'] = (
+        'text/html,application/xhtml+xml,application/xml;'
+        'q=0.9,image/webp,*/*;q=0.8'
     )
-    dcap["phantomjs.page.settings.accept"] = (
-        "text/html,application/xhtml+xml,application/xml;"
-        "q=0.9,image/webp,*/*;q=0.8"
+    dcap['phantomjs.page.customHeaders.2'] = (
+        'text/html,application/xhtml+xml,application/xml;'
+        'q=0.9,image/webp,*/*;q=0.8'
     )
+
+    ua_value = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)'
+                'AppleWebKit 537.36 (KHTML, like Gecko) Chrome')
+    dcap['phantomjs.page.settings.userAgent'] = ua_value
+    dcap['phantomjs.page.customHeaders.User-Agent'] = ua_value
+    # webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.customHeaders.User-Agent'] = ua_value
+    # webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.settings.userAgent'] = ua_value
 
     try:
         if os.name == 'posix':
@@ -731,6 +739,30 @@ class FactorialTest(unittest.TestCase):
         self.assertTrue(data.startswith('<body'))
         self.assertEqual(login_msg, 'ご利用ありがとうございます。')
 
+    # def test_execute_login_twice(self):
+    #     u"""loginするテスト
+    #     """
+    #     page = self.scraping.get_page()
+
+    #     login_dict = {
+    #         'login_id': "general-h",
+    #         'login_id_name': "ctl00$MainContent$txtID",
+    #         'password': "101968",
+    #         'password_name': "ctl00$MainContent$txtPSW",
+    #         'submit_path': "//input[@id='MainContent_btnLogin']"
+    #     }
+
+    #     page = self.scraping.execute_login(login_dict)
+
+    #     page = self.scraping.get_page()
+    #     page = self.scraping.execute_login(login_dict)
+
+    #     data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
+    #     login_msg = page.find_element_by_xpath(
+    #         "//p[@class='loginmsg']").text
+    #     self.assertTrue(data.startswith('<body'))
+    #     self.assertEqual(login_msg, 'ご利用ありがとうございます。')
+
     def test_get_attributes_not_find(self):
         u"""linkを取得するテスト。見つからないケース
         <div href="xxxx">はありえないケース
@@ -754,7 +786,7 @@ class FactorialTest(unittest.TestCase):
             if link.startswith("https://www.kaientai.cc/listword.aspx?ccd="):
                 pass
 
-        self.assertEqual(len(links), 234)
+        self.assertEqual(len(links), 236)
 
     def test_get_link_and_text(self):
         u"""link先URLとテキストを取得するテスト

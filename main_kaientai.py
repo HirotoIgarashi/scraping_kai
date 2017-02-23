@@ -280,12 +280,19 @@ if __name__ == '__main__':
                 break
 
             # クリック前のページ
-            old_page = category_page.find_element_by_tag_name('html')
+            old_page = None
+            try:
+                old_page = category_page.find_element_by_tag_name('html')
+            except NoSuchElementException:
+                pass
+            except WebDriverException:
+                pass
 
             SCRAPING.execute_link_click_by_element(next_link)
 
-            # クリック前のページが古くなるまで待つ
-            WebDriverWait(category_page, 30).until(staleness_of(old_page))
+            if old_page is not None:
+                # クリック前のページが古くなるまで待つ
+                WebDriverWait(category_page, 30).until(staleness_of(old_page))
 
         logprint(str(url_count) + '件の商品のURLを保存しました。')
 
@@ -317,15 +324,22 @@ if __name__ == '__main__':
         webcd = ''
 
         # クリック前のページ
-        old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
+        old_detail_page = None
+        try:
+            old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
+        except NoSuchElementException:
+            pass
+        except WebDriverException:
+            pass
 
         # 商品毎のページを取得する。
         product_page = SCRAPING.get_page(product_url)
         logprint(product_page.current_url)
         CURRENT_PAGE = product_page
 
-        # 前のページが古くなるまで待つ
-        WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
+        if old_detail_page is not None:
+            # 前のページが古くなるまで待つ
+            WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
 
         # ご指定の商品がデータベースにありません。の場合の処理
         try:
@@ -333,6 +347,8 @@ if __name__ == '__main__':
                 "//div[@id='MainContent_pnlNoItem']"
             )
         except NoSuchElementException:
+            pass
+        except WebDriverException:
             pass
         else:
             logprint(product_url + 'がデータベースにないためスキップします。')
@@ -343,6 +359,8 @@ if __name__ == '__main__':
             cost_text = product_page.find_element_by_xpath(
                 "//span[@id='MainContent_lblCost']"
             ).text
+        except WebDriverException:
+            pass
         except NoSuchElementException:
             # ログイン処理
             CURRENT_PAGE = SCRAPING.get_page()
@@ -372,9 +390,12 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 04 カテゴリ1: パンクズリストのトップページ > の次のカテゴリ
-        lbl_category = product_page.find_elements_by_xpath(
-            "//span[@id='MainContent_lblCategory']/a"
-        )
+        try:
+            lbl_category = product_page.find_elements_by_xpath(
+                "//span[@id='MainContent_lblCategory']/a"
+            )
+        except WebDriverException:
+            pass
 
         if len(lbl_category) > 1:
             product_list.extend([lbl_category[1].get_attribute('innerHTML')])
@@ -398,6 +419,8 @@ if __name__ == '__main__':
             ).get_attribute('innerHTML')
 
         except NoSuchElementException:
+            lbl_goods_name = ''
+        except WebDriverException:
             lbl_goods_name = ''
         else:
             pass
@@ -428,6 +451,8 @@ if __name__ == '__main__':
 
         except NoSuchElementException:
             maker_name = ''
+        except WebDriverException:
+            maker_name = ''
         else:
             pass
 
@@ -440,6 +465,8 @@ if __name__ == '__main__':
             ).text
 
         except NoSuchElementException:
+            price_text = ''
+        except WebDriverException:
             price_text = ''
         else:
             pass
@@ -462,6 +489,8 @@ if __name__ == '__main__':
             ).text
 
         except NoSuchElementException:
+            cost_text = ''
+        except WebDriverException:
             cost_text = ''
         else:
             pass
@@ -499,6 +528,8 @@ if __name__ == '__main__':
             ).text
         except NoSuchElementException:
             pass
+        except WebDriverException:
+            pass
 
         product_list.extend([label.replace('：', '')])
 
@@ -530,6 +561,8 @@ if __name__ == '__main__':
             ).text
         except NoSuchElementException:
             pass
+        except WebDriverException:
+            pass
 
         product_list.extend([label.replace('：', '')])
 
@@ -560,6 +593,8 @@ if __name__ == '__main__':
                 "//span[@id='MainContent_lbl属性3']"
             ).text
         except NoSuchElementException:
+            pass
+        except WebDriverException:
             pass
 
         product_list.extend([label.replace('：', '')])
@@ -600,6 +635,8 @@ if __name__ == '__main__':
             lbl_unit = product_page.find_element_by_xpath("//span[@id='MainContent_lblUnit']").text
         except NoSuchElementException:
             lbl_unit = ''
+        except WebDriverException:
+            lbl_unit = ''
         else:
             pass
 
@@ -609,6 +646,8 @@ if __name__ == '__main__':
         try:
             jancd = product_page.find_element_by_xpath("//span[@id='MainContent_lblJANCD']").text
         except NoSuchElementException:
+            jancd = ''
+        except WebDriverException:
             jancd = ''
         else:
             pass
@@ -637,6 +676,9 @@ if __name__ == '__main__':
             ).get_attribute('innerHTML')
 
         except NoSuchElementException:
+            r_comment = ''
+            comment = ''
+        except WebDriverException:
             r_comment = ''
             comment = ''
         else:
@@ -673,6 +715,9 @@ if __name__ == '__main__':
             ).get_attribute('innerHTML')
 
         except NoSuchElementException:
+            r_spec = ''
+            spec = ''
+        except WebDriverException:
             r_spec = ''
             spec = ''
         else:
@@ -938,9 +983,12 @@ if __name__ == '__main__':
         # 78 備考1: 同一カテゴリー商品のWEBCD
         # 複数ある場合は半角スペースで区切る
         category_list = []
-        r_category_list = product_page.find_elements_by_xpath(
-            "//div[@id='r-category']/table/tbody/tr/td[@class='Name']/a"
-        )
+        try:
+            r_category_list = product_page.find_elements_by_xpath(
+                "//div[@id='r-category']/table/tbody/tr/td[@class='Name']/a"
+            )
+        except WebDriverException:
+            pass
 
         for r_category in r_category_list:
             category_list.append(r_category.get_attribute('href'))
