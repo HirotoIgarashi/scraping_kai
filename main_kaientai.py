@@ -14,6 +14,7 @@ from logmessage import logprint
 import scraping
 import textfile
 import csvfile
+import requests_scraper
 
 URL = 'https://www.kaientai.cc/Default.aspx'
 
@@ -25,25 +26,21 @@ LOGIN_DICT = {
     'submit_path': '//input[@id="MainContent_btnLogin"]'
 }
 
-# 商品個別ページのリンクテキスト
-PRODUCT_LINK_TEXT = "詳細を見る"
-
-PRODUCT_IMAGE_XPATH = "//p[@class='product_img']/img"
-
-# 絵文字エリア
-PRODUCT_SPEC_IMAGE_XPATH = "//div[@class='emoji_area clfx']/p/img"
-
-# サンワサプライホームページへのリンク
-LINK_XPATH = '//p[@class="sanwaweb_btn"]/a'
-
 # csvファイルを格納するディレクトリ
 CSV_DIR = './kaientai/'
 
 # 結果を格納するディレクトリ
 RESULT_DIR = 'kaientai-result'
 
+# イメージを格納するディレクトリ
+IMAGE_DIR = 'kaientai-image'
+
+# アイコンを格納するディレクトリ
+ICON_DIR = 'kaientai-icon'
+
 # カテゴリ名保存用ファイル名
 CATEGORY_FILE_NAME = 'category.txt'
+
 # プロダクトURL保存用ファイル名
 PRODUCT_URL_FILE_NAME = 'product_url.txt'
 # 処理済みプロダクト格納用ファイル
@@ -91,6 +88,13 @@ if __name__ == '__main__':
     # 処理済みプロダクト格納用ファイル
     COMPLETE_PRODUCT = []
     COMPLETE_OBJ = textfile.TextFile(RESULT_DIR, COMPLETE_PRODUCT_FILE_NAME)
+
+    # RequestsScraperクラスの初期化
+    USER_AGENT = (
+        "Mozilla/5.0 (X11; Linux x86_64)"
+        "AppleWebKit/537.36 (KHTML, like Gecko)"
+        "Chrome/55.0.2883.87 Safari/537.36")
+    REQUESTS = requests_scraper.RequestsScraper(user_agent=USER_AGENT)
 
     # Sanwachannelクラスの初期化
     SCRAPING = scraping.Scraping(URL)
@@ -706,8 +710,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 0:
             image_name0 = 'ket-' + webcd + '.jpg'
             product_list.extend([image_name0])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[0][0], 'kaientai-image', image_name0)
+
+            # 画像を保存する。
+            url = image_name_list[0][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name0
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -715,8 +724,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 1:
             image_name1 = 'ket-' + webcd + '_1.jpg'
             product_list.extend([image_name1])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[1][0], 'kaientai-image', image_name1)
+
+            # 画像を保存する。
+            url = image_name_list[1][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name1
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -724,8 +738,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 2:
             image_name2 = 'ket-' + webcd + '_2.jpg'
             product_list.extend([image_name2])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[2][0], 'kaientai-image', image_name2)
+
+            # 画像を保存する。
+            url = image_name_list[2][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name2
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -733,8 +752,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 3:
             image_name3 = 'ket-' + webcd + '_3.jpg'
             product_list.extend([image_name3])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[3][0], 'kaientai-image', image_name3)
+
+            # 画像を保存する。
+            url = image_name_list[3][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name3
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -742,8 +766,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 4:
             image_name4 = 'ket-' + webcd + '_4.jpg'
             product_list.extend([image_name4])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[4][0], 'kaientai-image', image_name4)
+
+            # 画像を保存する。
+            url = image_name_list[4][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name4
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -751,8 +780,13 @@ if __name__ == '__main__':
         if len(image_name_list) > 5:
             image_name5 = 'ket-' + webcd + '_5.jpg'
             product_list.extend([image_name5])
-            # imagefile.download_and_save_dir_direct(
-            #     image_name_list[5][0], 'kaientai-image', image_name5)
+
+            # 画像を保存する。
+            url = image_name_list[5][0]
+            referer = product_page.current_url
+            path = IMAGE_DIR + '/' + image_name5
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -854,8 +888,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 0:
             icon_name0 = icon_image_name_list[0][1]
             product_list.extend([icon_name0])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[0][0], 'kaientai-icon', icon_name0)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[0][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name0
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -863,8 +902,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 1:
             icon_name1 = icon_image_name_list[1][1]
             product_list.extend([icon_name1])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[1][0], 'kaientai-icon', icon_name1)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[1][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name1
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -872,8 +916,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 2:
             icon_name2 = icon_image_name_list[2][1]
             product_list.extend([icon_name2])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[2][0], 'kaientai-icon', icon_name2)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[2][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name2
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -881,8 +930,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 3:
             icon_name3 = icon_image_name_list[3][1]
             product_list.extend([icon_name3])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[3][0], 'kaientai-icon', icon_name3)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[3][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name3
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -890,8 +944,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 4:
             icon_name4 = icon_image_name_list[4][1]
             product_list.extend([icon_name4])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[4][0], 'kaientai-icon', icon_name4)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[4][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name4
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -899,8 +958,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 5:
             icon_name5 = icon_image_name_list[5][1]
             product_list.extend([icon_name5])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[5][0], 'kaientai-icon', icon_name5)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[5][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name4
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -908,8 +972,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 6:
             icon_name6 = icon_image_name_list[6][1]
             product_list.extend([icon_name6])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[6][0], 'kaientai-icon', icon_name6)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[6][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name6
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -917,8 +986,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 7:
             icon_name7 = icon_image_name_list[7][1]
             product_list.extend([icon_name7])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[7][0], 'kaientai-icon', icon_name7)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[7][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name7
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -926,8 +1000,13 @@ if __name__ == '__main__':
         if len(icon_image_name_list) > 8:
             icon_name8 = icon_image_name_list[8][1]
             product_list.extend([icon_name8])
-            # imagefile.download_and_save_dir_direct(
-            #     icon_image_name_list[8][0], 'kaientai-icon', icon_name8)
+
+            # アイコンを保存する。
+            url = icon_image_name_list[8][0]
+            referer = product_page.current_url
+            path = ICON_DIR + '/' + icon_name8
+            response = REQUESTS.fetch_image(url, path, referer)
+
         else:
             product_list.extend([''])
 
@@ -983,13 +1062,6 @@ if __name__ == '__main__':
         CSVFILE.writerow(product_list)
 
         COMPLETE_FILE.write(product_url + ',' + product_category + '\n')
-
-        # アイコン画像の保存
-        # for url in icon_url_list:
-        #     print(url)
-        #     icon_image = SCRAPING.get_page(url)
-        #     print(type(icon_image))
-        #     print(icon_image.find_element_by_xpath("//body").get_attribute('innerHTML'))
 
     COMPLETE_FILE.close()
 

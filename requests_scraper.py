@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 u"""Requestsライブラリによるスクレイパー
 """
+import os
 import unittest
 
 import requests
@@ -12,19 +13,24 @@ class RequestsScraper():
     u"""Requestを使用するスクレイパー
     """
     def __init__(self, user_agent=None):
+        user_agent_dict = {'User-Agent': user_agent}
+
         self.requests = requests.Session()
+
         if user_agent is not None:
-            self.requests.headers.update(user_agent)
+            self.requests.headers.update(user_agent_dict)
 
     def set_user_agent(self, user_agent):
         """リクエストヘッダーのUser-Agentを更新する
         """
-        self.requests.headers.update(user_agent)
+        user_agent_dict = {'User-Agent': user_agent}
+        self.requests.headers.update(user_agent_dict)
 
     def set_referer(self, referer):
-        """リクエストヘッダーのUser-Agentを更新する
+        """リクエストヘッダーのRefererを更新する
         """
-        self.requests.headers.update(referer)
+        referer_dict = {'referer': referer}
+        self.requests.headers.update(referer_dict)
 
     def fetch(self, url):
         """ページを取得する
@@ -34,6 +40,18 @@ class RequestsScraper():
     def fetch_image(self, url, path, referer=None):
         """保存する
         """
+        path_list = path.split('/')[0:-1]
+        image_dir = ''
+        for dir_path in path_list:
+            if len(image_dir) == 0:
+                image_dir = dir_path
+            else:
+                image_dir += '/' + dir_path
+
+        # ./imageディレクトリを作成する。
+        if not os.path.exists(image_dir):
+            os.makedirs(image_dir)
+
         if referer is not None:
             self.set_referer(referer)
 
@@ -54,10 +72,10 @@ class FatorialTest(unittest.TestCase):
     def setUp(self):
         u"""セットアップ
         """
-        user_agent = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/55.0.2883.87 Safari/537.36"}
+        user_agent = (
+            "Mozilla/5.0 (X11; Linux x86_64)"
+            "AppleWebKit/537.36 (KHTML, like Gecko)"
+            "Chrome/55.0.2883.87 Safari/537.36")
         self.requests = RequestsScraper(user_agent=user_agent)
 
     def test_fetch(self):
@@ -110,10 +128,10 @@ class FatorialTest(unittest.TestCase):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
-        self.requests.set_user_agent({
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/55.0.2883.87 Safari/537.36"})
+        self.requests.set_user_agent(
+            "Mozilla/5.0 (X11; Linux x86_64)"
+            "AppleWebKit/537.36 (KHTML, like Gecko)"
+            "Chrome/55.0.2883.87 Safari/537.36")
         response = self.requests.fetch(url)
 
         self.assertEqual(response.status_code, 404)
@@ -125,12 +143,11 @@ class FatorialTest(unittest.TestCase):
         """一覧ページを取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
-        self.requests.set_user_agent({
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/55.0.2883.87 Safari/537.36"})
-        self.requests.set_referer({
-            'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'})
+        self.requests.set_user_agent(
+            "Mozilla/5.0 (X11; Linux x86_64)"
+            "AppleWebKit/537.36 (KHTML, like Gecko)"
+            "Chrome/55.0.2883.87 Safari/537.36")
+        self.requests.set_referer('https://www.kaientai.cc/goods.aspx?webcd=298761')
         response = self.requests.fetch(url)
 
         self.assertEqual(response.status_code, 200)
@@ -142,8 +159,7 @@ class FatorialTest(unittest.TestCase):
         """画像を取得する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
-        self.requests.set_referer({
-            'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'})
+        self.requests.set_referer('https://www.kaientai.cc/goods.aspx?webcd=298761')
         response = self.requests.fetch(url)
 
         if response.status_code == 200:
@@ -158,6 +174,7 @@ class FatorialTest(unittest.TestCase):
 
     def test_fetch_image_fail(self):
         """画像を取得する
+        refererを設定しないので失敗する
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
         path = 'tmp/fail.jpg'
@@ -173,7 +190,22 @@ class FatorialTest(unittest.TestCase):
         """
         url = 'https://www.kaientai.cc/images/products/298761.jpg'
         path = 'tmp/test.jpg'
-        referer = {'referer': 'https://www.kaientai.cc/goods.aspx?webcd=298761'}
+        referer = 'https://www.kaientai.cc/goods.aspx?webcd=298761'
+        response = self.requests.fetch_image(url, path, referer)
+
+        print(response.request.headers)
+
+        self.assertEqual(response.status_code, 200)
+
+        response.close()
+        response.connection.close()
+
+    def test_fetch_image_tmp_tmp(self):
+        """画像を取得する
+        """
+        url = 'https://www.kaientai.cc/images/products/298761.jpg'
+        path = 'tmp/tmp/test.jpg'
+        referer = 'https://www.kaientai.cc/goods.aspx?webcd=298761'
         response = self.requests.fetch_image(url, path, referer)
 
         print(response.request.headers)
