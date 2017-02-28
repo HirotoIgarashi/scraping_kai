@@ -2,7 +2,6 @@
 u"""スクレイピング用のライブラリ
 """
 import os
-import random
 import time
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -19,113 +18,108 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 # My library
 from logmessage import logprint
-# import csvfile
-import textfile
 
 
-def write_not_find_page_url(url):
-    u"""見つからなかったページのurlを書き込む
+class Scraper():
     """
-    not_find = textfile.TextFile('result', 'not_find_product.txt')
-    not_find_file = not_find.open_append_mode()
-    not_find_file.write(url + '\n')
-    not_find_file.close()
-
-
-def get_phantom_driver():
-    u"""phantomJSのドライバーを取得する。
-    """
-    # dcap = dict(DesiredCapabilities.PHANTOMJS)
-    # dcap = DesiredCapabilities.FIREFOX.copy()
-    dcap = DesiredCapabilities.PHANTOMJS
-    dcap['phantomjs.page.settings.accept'] = (
-        'text/html,application/xhtml+xml,application/xml;'
-        'q=0.9,image/webp,*/*;q=0.8'
-    )
-    dcap['phantomjs.page.customHeaders.2'] = (
-        'text/html,application/xhtml+xml,application/xml;'
-        'q=0.9,image/webp,*/*;q=0.8'
-    )
-
-    ua_value = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)'
-                'AppleWebKit 537.36 (KHTML, like Gecko) Chrome')
-    dcap['phantomjs.page.settings.userAgent'] = ua_value
-    dcap['phantomjs.page.customHeaders.User-Agent'] = ua_value
-    # webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.customHeaders.User-Agent'] = ua_value
-    # webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.settings.userAgent'] = ua_value
-
-    try:
-        if os.name == 'posix':
-            driver = webdriver.PhantomJS(
-                executable_path='lib/phantomjs',
-                desired_capabilities=dcap)
-        elif os.name == 'nt':
-            driver = webdriver.PhantomJS(
-                executable_path='lib/phantomjs.exe',
-                desired_capabilities=dcap)
-        else:
-            logprint('Unsupported OS')
-
-    except URLError as error_code:
-        logprint('ドライバーの取得に失敗しました。')
-        logprint(error_code)
-        return None
-    except WebDriverException as error_code:
-        logprint('PhantomJSのサービスとの接続に失敗しました。')
-        logprint('libディレクトリにPhantomJSの実行ファイルが必要です。')
-        return None
-
-    return driver
-
-
-def get_firefox_driver():
-    u"""firefoxのドライバーを取得する。
-    """
-    try:
-        driver = webdriver.Firefox()
-    except URLError as error_code:
-        logprint(error_code)
-        return None
-    except WebDriverException as error_code:
-        logprint(error_code)
-        return None
-    print(type(driver))
-
-    return driver
-
-
-class Scraping():
-    u"""Scrapingクラス
+    Scrapingクラス
     メソッド:
-        * __init__
-        * get_page(self, url=None)
-        * execute_login(self, login_dict, driver=None)
-        * get_attribute_list_by_xpath(self, xpath, attribute, driver=None)
+        * __init__(self, base_url):
+        * get_page(self, url=None):
+        * execute_login(self, login_dict, driver=None):
+        * get_elements_by_xpath(self, xpath, driver=None):
+        * get_text_by_xpath(xpath, driver=None):
+        * get_attribute_list_by_xpath(self, xpath, attribute, driver=None):
+        * get_link_and_text_list(self, xpath, attribute, pattern, driver=None):
+        * get_next_link(self, xpath):
+        * execute_link_click_by_element(self, element):
+        * execute_link_click_by_xpath(self, xpath):
+        * execute_search(self, input_list, submit_path):
+        * is_link_enable(self, link_text):
+        * get_table_row(self, xpath):
+        * get_next_page(self, link_text):
+        * get_product_link(self, product_pattern):
+        * get_absolute_url(self, source):
+        @staticmethod
+        * get_select_list_by_xpath(driver, xpath):
+        * get_links(self, url, link_pattern, xpath):
+        @staticmethod
+        * get_product_url(row, link_text):
     """
     def __init__(self, base_url):
+        """
+        目的: phantomJSのドライバーを取得する。
+        引数:
+            * base_url: トップページのURL
+        動作:
+            * OSを判定してLinux版のバイナリとWindows版のバイナリを選択する
+            * バイナリの置き場所はlibの下
+            * リクエストヘッダのAcceptとUser-Agentを設定する
+        設定:
+            * self.page_list:
+            * self.product_page_list:
+            * self.base_url: トップページ
+            * self.driver:
+        戻り値:
+            * driver: phantomJSのドライバー
+            * None: ドライバーの取得に失敗した場合
+        """
 
         self.page_list = []
         self.product_page_list = []
 
         self.base_url = base_url
 
-        self.driver = get_phantom_driver()
-        if self.driver is not None:
-            self.product_driver = get_phantom_driver()
-            self.link_driver = get_phantom_driver()
+        dcap = DesiredCapabilities.PHANTOMJS
+        dcap['phantomjs.page.settings.accept'] = (
+            'text/html,application/xhtml+xml,application/xml;'
+            'q=0.9,image/webp,*/*;q=0.8'
+        )
+        dcap['phantomjs.page.customHeaders.2'] = (
+            'text/html,application/xhtml+xml,application/xml;'
+            'q=0.9,image/webp,*/*;q=0.8'
+        )
+
+        ua_value = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5)'
+                    'AppleWebKit 537.36 (KHTML, like Gecko) Chrome')
+        dcap['phantomjs.page.settings.userAgent'] = ua_value
+        dcap['phantomjs.page.customHeaders.User-Agent'] = ua_value
+
+        try:
+            if os.name == 'posix':
+                self.driver = webdriver.PhantomJS(
+                    executable_path='lib/phantomjs',
+                    desired_capabilities=dcap)
+            elif os.name == 'nt':
+                self.driver = webdriver.PhantomJS(
+                    executable_path='lib/phantomjs.exe',
+                    desired_capabilities=dcap)
+            else:
+                logprint('Unsupported OS')
+
+        except URLError as error_code:
+            logprint('ドライバーの取得に失敗しました。')
+            logprint(error_code)
+        except WebDriverException as error_code:
+            logprint('PhantomJSのサービスとの接続に失敗しました。')
+            logprint('libディレクトリにPhantomJSの実行ファイルが必要です。')
 
 
     def get_page(self, url=None):
         """
         目的: urlを受け取りページを取得する。
-        戻り値: ベージのドライバー
+        引数:
+            * url: 取得するページのURL
+            * None: 引数にurlがなかったらbase_urlを設定する
+        戻り値:
+            * self.driver: ベージのドライバー
+            * None: 例外が発生した場合はNoneを返す
         """
         if url is None:
             url = self.base_url
 
-        # driver = self.driver
-
         try:
+            old_page = self.driver.find_element_by_tag_name('html')
             self.driver.get(url)
         except HTTPError as error_code:
             logprint(url)
@@ -152,10 +146,19 @@ class Scraping():
         # print('%s: %s' % (key, cap_dict[key]))
         # print(self.driver.current_url)
 
+        try:
+            WebDriverWait(self.driver, 30).until(
+                EC.staleness_of(old_page)
+                )
+        except TimeoutException as error_code:
+            logprint("Error! TimeoutException")
+            logprint(error_code)
+            return None
+
         return self.driver
 
     def execute_login(self, login_dict, driver=None):
-        u"""
+        """
         目的: ログインを実行する。
         引数:
             * driver: Seleniumのドライバー
@@ -170,7 +173,8 @@ class Scraping():
                     'submit_path': "//input[@id='MainContent_btnLogin']"
                         : クリックするHTML要素のXPATH
                 }
-        戻り値: Seleniumのドライバー
+        戻り値:
+            * driver: Seleniumのドライバー
         """
         if driver is None:
             driver = self.driver
@@ -191,13 +195,65 @@ class Scraping():
 
         return driver
 
+    def get_elements_by_xpath(self, xpath, driver=None):
+        """
+        目的: driverとxpathを受け取りWeb要素をリストで返す。
+        引数:
+            * xpath: 取得したいWeb要素のxpath
+        戻り値:
+            * 見つかった時: Web要素のリスト
+            * 見つからなかった時: [] 空のリスト
+        """
+        if driver is None:
+            driver = self.driver
+
+        try:
+            elements = driver.find_elements_by_xpath(xpath)
+        except WebDriverException:
+            logprint('Error! WebDriverException')
+            return []
+        except RemoteDisconnected:
+            logprint("Error! RemoteDisconnected")
+            return []
+
+        return elements
+
+    def get_text_by_xpath(self, xpath, driver=None):
+        """
+        目的:
+            * XPATHのWeb要素のテキストを返す
+            * 要素がしなかったら空文字列を返す。
+        引数:
+            * xpath: 検索するxpath
+        戻り値 :
+            * data : xpathに一致したテキスト
+            * '' : データが一致しなかった時
+        """
+        if driver is None:
+            driver = self.driver
+
+        try:
+            element_text = driver.find_element_by_xpath(xpath).text
+        except NoSuchElementException:
+            return ''
+        except WebDriverException:
+            logprint('Error! WebDriverException')
+            return ''
+        except RemoteDisconnected:
+            logprint("Error! RemoteDisconnected")
+            return ''
+
+        element_text = bytes(element_text, 'utf-8').decode('utf-8')
+
+        return element_text
+
     def get_attribute_list_by_xpath(self, xpath, attribute, driver=None):
-        u"""
+        """
         目的: XPATHと属性名を受け取り属性の値のリストを返す。
         用例:
             * xpath = "//a[@href]"
             * attribute = "href"
-            * self.scraping.get_attribute_list_by_xpath(xpath, attribute)
+            * self.scraper.get_attribute_list_by_xpath(xpath, attribute)
         引数:
             * xpath: XPATH
             * attribute: 属性名
@@ -215,10 +271,13 @@ class Scraping():
             data_list = (driver
                          .find_elements_by_xpath(xpath))
         except NoSuchElementException:
-            print("NoSuchElementException!")
+            logprint("NoSuchElementException!")
             return return_list
         except WebDriverException:
-            print("WebDriverException!")
+            logprint("WebDriverException!")
+            return return_list
+        except RemoteDisconnected:
+            logprint("Error! RemoteDisconnected")
             return return_list
 
         for data in data_list:
@@ -228,13 +287,13 @@ class Scraping():
         return return_list
 
     def get_link_and_text_list(self, xpath, attribute, pattern, driver=None):
-        u"""
+        """
         目的: XPATHと属性名を受け取り属性の値のリストを返す。
         用例:
             * xpath = "//a[@href]"
             * attribute = "href"
             * pattern = "http://xxxxx"
-            * self.scraping.get_attribute_list_by_xpath(xpath, attribute, pattern)
+            * self.scraper.get_attribute_list_by_xpath(xpath, attribute, pattern)
         引数:
             * xpath: XPATH
             * attribute: 属性名
@@ -252,10 +311,10 @@ class Scraping():
         try:
             data_list = driver.find_elements_by_xpath(xpath)
         except NoSuchElementException:
-            print("NoSuchElementException!")
+            logprint("NoSuchElementException!")
             return return_list
         except WebDriverException:
-            print("WebDriverException!")
+            logprint("WebDriverException!")
             return return_list
 
         for data in data_list:
@@ -285,36 +344,6 @@ class Scraping():
             return None
 
         return next_link
-
-
-    def get_product_driver(self, url):
-        u"""urlを受け取りページを取得する。
-        """
-        logprint(url)
-        try:
-            # old_page = (self.driver.find_element_by_tag_name('html'))
-            self.product_driver.get(url)
-            time.sleep(3)
-            # WebDriverWait(self.driver, 30).until(
-            #     EC.staleness_of(old_page))
-        except HTTPError as error_code:
-            logprint(url)
-            logprint(error_code)
-            return None
-        except URLError as error_code:
-            logprint("The server could not be found!")
-            logprint(error_code)
-            return None
-        except RemoteDisconnected as error_code:
-            logprint("Error! RemoteDisconnected")
-            logprint(error_code)
-            return None
-        except WebDriverException as error_code:
-            logprint("Error! WebDriverException")
-            logprint(error_code)
-            return None
-
-        return self.product_driver
 
     def execute_link_click_by_element(self, element):
         u"""リンクをクリックする。
@@ -393,23 +422,6 @@ class Scraping():
         else:
             return link_exists
 
-    @staticmethod
-    def get_list_by_xpath(driver, xpath):
-        u"""driverとxpathを受け取り結果をリストで返す。
-        戻り値:
-            * 見つかった時: リンクのリスト
-            * 見つからなかった時: None
-        """
-
-        try:
-            return_list = driver.find_elements_by_xpath(xpath)
-        except NoSuchElementException:
-            return None
-        except WebDriverException:
-            return None
-
-        return return_list
-
     def get_table_row(self, xpath):
         u"""
         目的: 引数で与えられたテーブルの行をリストで返す
@@ -460,44 +472,6 @@ class Scraping():
         else:
             return True
 
-    @staticmethod
-    def get_phantom_page(url, driver):
-        u"""urlを受け取りページを取得する。
-        """
-
-        try:
-            # 0.2秒から2秒の間でランダムにスリープする
-            time.sleep(2/random.randint(1, 10))
-            old_page = driver.find_element_by_tag_name('html')
-            driver.get(url)
-        except HTTPError as error_code:
-            logprint(url)
-            logprint(error_code)
-            return None
-        except URLError as error_code:
-            logprint("The server could not be found!")
-            logprint(error_code)
-            return None
-        except RemoteDisconnected as error_code:
-            logprint("Error! RemoteDisconnected")
-            logprint(error_code)
-            return None
-        except WebDriverException as error_code:
-            logprint("Error! WebDriverException")
-            logprint(error_code)
-            return None
-
-        try:
-            WebDriverWait(driver, 30).until(
-                EC.staleness_of(old_page)
-                )
-        except TimeoutException as error_code:
-            logprint("Error! TimeoutException")
-            logprint(error_code)
-            return None
-
-        return driver
-
     def get_product_link(self, product_pattern):
         u"""
         目的 : 商品個別のページを返す。
@@ -515,7 +489,7 @@ class Scraping():
         link_list = []
 
         try:
-            links = (self.product_driver.find_elements_by_xpath
+            links = (self.driver.find_elements_by_xpath
                      ("//div[@class='mdItemList']/div/div/ul/li/dl/dd/a"))
         except StaleElementReferenceException as error_code:
             logprint('StaleElementReferenceException')
@@ -556,35 +530,6 @@ class Scraping():
 
         return absolute_url
 
-    @staticmethod
-    def get_text_by_xpath(driver, xpath, error_message=''):
-        u"""driverと検索するclassの名前を受け取り結果を返す。
-        目的:
-            * xpathに一致するテキストを返す
-            * 一致しなかったらエラーメッセージを出力する
-            * 一致しなかったら空文字列を返す。
-        引数:
-            * phantom_page: driver
-            * xpath: 検索するxpath
-            * error_message: 目的のデータがなかった時のエラーメッセージ
-        戻り値 :
-            * data : xpathに一致したテキスト
-            * '' : データが一致しなかった時
-        """
-        try:
-            data = driver.find_element_by_xpath(xpath).text
-        except NoSuchElementException:
-            if error_message is '':
-                pass
-            else:
-                logprint(error_message)
-            return ''
-        except WebDriverException:
-            return ''
-
-        data = bytes(data, 'utf-8').decode('utf-8')
-
-        return data
 
     @staticmethod
     def get_select_list_by_xpath(driver, xpath):
@@ -659,13 +604,11 @@ class Scraping():
                 logprint(
                     str(link_serial_number) + '個目のカテゴリを処理しています。')
 
-        self.get_phantom_page(url, self.driver)
+        self.get_page(url)
 
-        links = self.get_list_by_xpath(
-            self.driver,
-            xpath)
+        links = self.get_elements_by_xpath(xpath)
 
-        if links is None:
+        if links is []:
             self.page_list = None
         else:
             for link in links:
@@ -702,7 +645,6 @@ class Scraping():
 
         return url
 
-
 class FactorialTest(unittest.TestCase):
     u"""テスト用のクラス
     """
@@ -710,19 +652,19 @@ class FactorialTest(unittest.TestCase):
     def setUp(self):
         u"""セットアップ
         """
-        self.scraping = Scraping('https://www.kaientai.cc/')
+        self.scraper = Scraper('https://www.kaientai.cc/')
 
     def test_get_page(self):
         u"""pageを取得するテスト
         """
-        page = self.scraping.get_page()
+        page = self.scraper.get_page()
         data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
         self.assertTrue(data.startswith('<body'))
 
     def test_execute_login(self):
         u"""loginするテスト
         """
-        page = self.scraping.get_page()
+        page = self.scraper.get_page()
 
         login_dict = {
             'login_id': "general-h",
@@ -732,36 +674,55 @@ class FactorialTest(unittest.TestCase):
             'submit_path': "//input[@id='MainContent_btnLogin']"
         }
 
-        page = self.scraping.execute_login(login_dict)
+        page = self.scraper.execute_login(login_dict)
         data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
         login_msg = page.find_element_by_xpath(
             "//p[@class='loginmsg']").text
         self.assertTrue(data.startswith('<body'))
         self.assertEqual(login_msg, 'ご利用ありがとうございます。')
 
-    # def test_execute_login_twice(self):
-    #     u"""loginするテスト
-    #     """
-    #     page = self.scraping.get_page()
+    def test_get_elements_by_xpath(self):
+        """
+        Web要素を取得するテスト。
+        <div id="dd01">は食事関連
+        """
+        xpath = '//div[@id="dd01"]'
+        self.scraper.get_page()
+        elements = self.scraper.get_elements_by_xpath(xpath)
 
-    #     login_dict = {
-    #         'login_id': "general-h",
-    #         'login_id_name': "ctl00$MainContent$txtID",
-    #         'password': "101968",
-    #         'password_name': "ctl00$MainContent$txtPSW",
-    #         'submit_path': "//input[@id='MainContent_btnLogin']"
-    #     }
+        self.assertEqual(len(elements), 1)
 
-    #     page = self.scraping.execute_login(login_dict)
+    def test_get_elements_not_find(self):
+        """
+        Web要素を取得するテスト。
+        <div id="abcd">はないはず
+        """
+        xpath = '//div[@id="abcd"]'
+        self.scraper.get_page()
+        elements = self.scraper.get_elements_by_xpath(xpath)
 
-    #     page = self.scraping.get_page()
-    #     page = self.scraping.execute_login(login_dict)
+        self.assertEqual(elements, [])
 
-    #     data = page.find_element_by_xpath('//body').get_attribute('outerHTML')
-    #     login_msg = page.find_element_by_xpath(
-    #         "//p[@class='loginmsg']").text
-    #     self.assertTrue(data.startswith('<body'))
-    #     self.assertEqual(login_msg, 'ご利用ありがとうございます。')
+    def test_get_text_by_xpath(self):
+        """
+        Web要素のテキストを取得するテスト。
+        """
+        xpath = '//*[@id="left-menu-maker"]/h3'
+        self.scraper.get_page()
+        element_text = self.scraper.get_text_by_xpath(xpath)
+
+        self.assertEqual(element_text, 'メーカーから探す')
+
+    def test_get_text_not_find(self):
+        """
+        Web要素のテキストを取得するテスト。
+        失敗して空文字がかえってくる。
+        """
+        xpath = '//*[@id="left-menu-maker"]/h4'
+        self.scraper.get_page()
+        element_text = self.scraper.get_text_by_xpath(xpath)
+
+        self.assertEqual(element_text, '')
 
     def test_get_attributes_not_find(self):
         u"""linkを取得するテスト。見つからないケース
@@ -769,8 +730,8 @@ class FactorialTest(unittest.TestCase):
         """
         xpath = "//div"
         attribute = "href"
-        self.scraping.get_page()
-        links = self.scraping.get_attribute_list_by_xpath(xpath, attribute)
+        self.scraper.get_page()
+        links = self.scraper.get_attribute_list_by_xpath(xpath, attribute)
 
         self.assertEqual(links, [])
 
@@ -779,14 +740,14 @@ class FactorialTest(unittest.TestCase):
         """
         xpath = "//a[@href]"
         attribute = "href"
-        self.scraping.get_page()
-        links = self.scraping.get_attribute_list_by_xpath(xpath, attribute)
+        self.scraper.get_page()
+        links = self.scraper.get_attribute_list_by_xpath(xpath, attribute)
 
         for link in links:
             if link.startswith("https://www.kaientai.cc/listword.aspx?ccd="):
                 pass
 
-        self.assertEqual(len(links), 236)
+        self.assertEqual(len(links), 237)
 
     def test_get_link_and_text(self):
         u"""link先URLとテキストを取得するテスト
@@ -794,8 +755,8 @@ class FactorialTest(unittest.TestCase):
         xpath = "//a[@href]"
         attribute = "href"
         pattern = "https://www.kaientai.cc/listword.aspx?ccd="
-        self.scraping.get_page()
-        links = self.scraping.get_link_and_text_list(xpath, attribute, pattern)
+        self.scraper.get_page()
+        links = self.scraper.get_link_and_text_list(xpath, attribute, pattern)
 
         self.assertEqual(len(links), 141)
 
@@ -803,8 +764,8 @@ class FactorialTest(unittest.TestCase):
         u"""アクティブページの次のlinkを取得するテスト
         """
         active_element_xpath = "//span[@class='m_pager_active']"
-        self.scraping.get_page()
-        next_link = self.scraping.get_next_link(active_element_xpath)
+        self.scraper.get_page()
+        next_link = self.scraper.get_next_link(active_element_xpath)
 
         self.assertEqual(next_link, None)
 
@@ -813,8 +774,8 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 10件だけデータがあるページ
-        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0209")
-        next_link = self.scraping.get_next_link(active_element_xpath)
+        self.scraper.get_page("https://www.kaientai.cc/listword.aspx?ccd=0209")
+        next_link = self.scraper.get_next_link(active_element_xpath)
 
         self.assertTrue(next_link)
         self.assertEqual(next_link.text, '>>')
@@ -824,8 +785,8 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
-        next_link = self.scraping.get_next_link(active_element_xpath)
+        self.scraper.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
+        next_link = self.scraper.get_next_link(active_element_xpath)
 
         self.assertTrue(next_link)
         self.assertEqual(next_link.text, '2')
@@ -835,11 +796,11 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
-        next_link = self.scraping.get_next_link(active_element_xpath)
+        self.scraper.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
+        next_link = self.scraper.get_next_link(active_element_xpath)
         while next_link.text != '>>':
-            self.scraping.execute_link_click_by_element(next_link)
-            next_link = self.scraping.get_next_link(active_element_xpath)
+            self.scraper.execute_link_click_by_element(next_link)
+            next_link = self.scraper.get_next_link(active_element_xpath)
 
         self.assertEqual(next_link.text, '>>')
 
@@ -848,23 +809,23 @@ class FactorialTest(unittest.TestCase):
         """
         active_element_xpath = "//span[@class='m_pager_active']"
         # 21件あるページ
-        self.scraping.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
+        self.scraper.get_page("https://www.kaientai.cc/listword.aspx?ccd=0202")
         product_list = []
         while True:
             product_list.extend(
-                self.scraping.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
+                self.scraper.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
             )
-            next_link = self.scraping.get_next_link(active_element_xpath)
+            next_link = self.scraper.get_next_link(active_element_xpath)
             if next_link.text == '>>':
                 break
-            self.scraping.execute_link_click_by_element(next_link)
+            self.scraper.execute_link_click_by_element(next_link)
 
         self.assertEqual(len(product_list), 21)
 
     def tearDown(self):
         u"""クローズ処理など
         """
-        self.scraping.driver.quit()
+        self.scraper.driver.quit()
 
 if __name__ == '__main__':
     unittest.main()

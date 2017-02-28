@@ -11,7 +11,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import WebDriverException
 # My library
 from logmessage import logprint
-import scraping
+import scraper
 import textfile
 import csvfile
 import requests_scraper
@@ -97,11 +97,11 @@ if __name__ == '__main__':
     REQUESTS = requests_scraper.RequestsScraper(user_agent=USER_AGENT)
 
     # Sanwachannelクラスの初期化
-    SCRAPING = scraping.Scraping(URL)
+    SCRAPER = scraper.Scraper(URL)
 
     # ログイン処理
-    CURRENT_PAGE = SCRAPING.get_page()
-    SCRAPING.execute_login(LOGIN_DICT)
+    CURRENT_PAGE = SCRAPER.get_page()
+    SCRAPER.execute_login(LOGIN_DICT)
 
     # カテゴリファイルがあるかを判定する。
     if os.path.isfile(RESULT_DIR + '/' + CATEGORY_FILE_NAME):
@@ -133,7 +133,7 @@ if __name__ == '__main__':
         XPATH = "//a[@href]"
         ATTRIBUTE = "href"
         PATTERN = "https://www.kaientai.cc/listword.aspx?ccd="
-        CATEGORY_LINKS = SCRAPING.get_link_and_text_list(XPATH, ATTRIBUTE, PATTERN)
+        CATEGORY_LINKS = SCRAPER.get_link_and_text_list(XPATH, ATTRIBUTE, PATTERN)
 
         for link in CATEGORY_LINKS:
             # * カテゴリリストに格納する。
@@ -182,9 +182,9 @@ if __name__ == '__main__':
             continue
 
         logprint(category_link[0] + ":" + category_link[1])
-        category_page = SCRAPING.get_page(category_link[0])
+        category_page = SCRAPER.get_page(category_link[0])
         CURRENT_PAGE = category_page
-        lbl_count = SCRAPING.get_text_by_xpath(category_page, '//span[@id="MainContent_lblCount"]')
+        lbl_count = SCRAPER.get_text_by_xpath(category_page, '//span[@id="MainContent_lblCount"]')
         logprint(lbl_count + "件の商品が見つかりました。")
 
         # アクティブな要素がなくなるまでループする
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         url_count = 0
         while True:
             # 商品のwebcdを取得する。1ページにつき10個の商品
-            webcd_list = SCRAPING.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
+            webcd_list = SCRAPER.get_attribute_list_by_xpath('//div[@id="title"]/h2/a', 'href')
             for webcd in webcd_list:
                 product_record = webcd + ',' + category_link[1]
 
@@ -204,7 +204,7 @@ if __name__ == '__main__':
                 url_count += 1
 
             # アクティブな要素の次の要素をクリック
-            next_link = SCRAPING.get_next_link(active_element_xpath)
+            next_link = SCRAPER.get_next_link(active_element_xpath)
 
             # whileループの終了条件
             # シューズカテゴリの590ページの次へをクリックすると
@@ -225,7 +225,7 @@ if __name__ == '__main__':
             except WebDriverException:
                 pass
 
-            SCRAPING.execute_link_click_by_element(next_link)
+            SCRAPER.execute_link_click_by_element(next_link)
 
             if old_page is not None:
                 # クリック前のページが古くなるまで待つ
@@ -270,7 +270,7 @@ if __name__ == '__main__':
             pass
 
         # 商品毎のページを取得する。
-        product_page = SCRAPING.get_page(product_url)
+        product_page = SCRAPER.get_page(product_url)
         logprint(product_page.current_url)
         CURRENT_PAGE = product_page
 
@@ -279,56 +279,34 @@ if __name__ == '__main__':
             WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
 
         # ご指定の商品がデータベースにありません。の場合の処理
-        try:
-            pnl_no_item = product_page.find_element_by_xpath(
-                "//div[@id='MainContent_pnlNoItem']"
-            )
-        except NoSuchElementException:
-            pass
-        except WebDriverException:
+        pnl_no_item = SCRAPER.get_text_by_xpath(
+            "//div[@id='MainContent_pnlNoItem']")
+
+        if pnl_no_item == '':
             pass
         else:
             logprint(product_url + 'がデータベースにないためスキップします。')
             continue
 
         # ログインされているかのチェック。仕切価があるかを確認する。
-        try:
-            cost_text = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lblCost']"
-            ).text
-        except NoSuchElementException:
+        cost_text = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblCost']")
+
+        if cost_text == '':
             # ログイン処理
-            CURRENT_PAGE = SCRAPING.get_page()
-            SCRAPING.execute_login(LOGIN_DICT)
+            CURRENT_PAGE = SCRAPER.get_page()
+            SCRAPER.execute_login(LOGIN_DICT)
+
             # クリック前のページ
             old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
 
             # 商品毎のページを取得する。
-            product_page = SCRAPING.get_page(product_url)
+            product_page = SCRAPER.get_page(product_url)
             logprint(product_page.current_url)
             CURRENT_PAGE = product_page
 
             # 前のページが古くなるまで待つ
             WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
-        except WebDriverException:
-            pass
-        else:
-            logprint(cost_text)
-            if cost_text == '':
-                # ログイン処理
-                CURRENT_PAGE = SCRAPING.get_page()
-                SCRAPING.execute_login(LOGIN_DICT)
-                # クリック前のページ
-                old_detail_page = CURRENT_PAGE.find_element_by_tag_name('html')
-
-                # 商品毎のページを取得する。
-                product_page = SCRAPING.get_page(product_url)
-                logprint(product_page.current_url)
-                CURRENT_PAGE = product_page
-
-                # 前のページが古くなるまで待つ
-                WebDriverWait(product_page, 30).until(staleness_of(old_detail_page))
-
 
         # 01 ID: URLに表示されるwebcdを取得
         webcd_search = re.search(r"\d+", product_url)
@@ -342,12 +320,8 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 04 カテゴリ1: パンクズリストのトップページ > の次のカテゴリ
-        try:
-            lbl_category = product_page.find_elements_by_xpath(
-                "//span[@id='MainContent_lblCategory']/a"
-            )
-        except WebDriverException:
-            pass
+        lbl_category = SCRAPER.get_elements_by_xpath(
+            "//span[@id='MainContent_lblCategory']/a")
 
         if len(lbl_category) > 1:
             product_list.extend([lbl_category[1].get_attribute('innerHTML')])
@@ -396,32 +370,15 @@ if __name__ == '__main__':
             product_list.extend([''])
 
         # 11 メーカー名: メーカー名で表示されたもの
-        try:
-            maker_name = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lblMakerName']/a"
-            ).text
-
-        except NoSuchElementException:
-            maker_name = ''
-        except WebDriverException:
-            maker_name = ''
-        else:
-            pass
+        maker_name = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblMakerName']/a")
 
         product_list.extend([maker_name])
 
         # 12 税抜価格: 小売価格で表示されたもの数字のみ
-        try:
-            price_text = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lblPrice']"
-            ).text
-
-        except NoSuchElementException:
-            price_text = ''
-        except WebDriverException:
-            price_text = ''
-        else:
-            pass
+        price_text = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblPrice']"
+        )
 
         decimal_search = re.findall(r"\d+", price_text)
 
@@ -435,17 +392,8 @@ if __name__ == '__main__':
         product_list.extend([price])
 
         # 13 仕切価: 卸売価格で表示されたもの 数字のみ
-        try:
-            cost_text = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lblCost']"
-            ).text
-
-        except NoSuchElementException:
-            cost_text = ''
-        except WebDriverException:
-            cost_text = ''
-        else:
-            pass
+        cost_text = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblCost']")
 
         # この商品はお見積り商品になりますの場合の処理
         if cost_text.startswith('この商品は'):
@@ -476,27 +424,17 @@ if __name__ == '__main__':
 
         # 16 項目選択肢1: カラーやサイズなど選択項目がある場合の項目名
         # ラベルを取得する。
-        label = ''
-        try:
-            label = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lbl属性1']"
-            ).text
-        except NoSuchElementException:
-            pass
-        except WebDriverException:
-            pass
+        label = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lbl属性1']"
+        )
 
         product_list.extend([label.replace('：', '')])
 
         # 17 項目1: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
-        option_list = []
-        try:
-            option_list = product_page.find_elements_by_xpath(
-                "//select[@name='ctl00$MainContent$ddl属性1']/option"
-            )
-        except WebDriverException:
-            pass
+        option_list = SCRAPER.get_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性1']/option"
+        )
 
         option_text = ''
         for option in option_list:
@@ -509,27 +447,16 @@ if __name__ == '__main__':
 
         # 18 項目選択肢2: 選択項目が複数ある場合（2個め）
         # ラベルを取得する。
-        label = ''
-        try:
-            label = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lbl属性2']"
-            ).text
-        except NoSuchElementException:
-            pass
-        except WebDriverException:
-            pass
+        label = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lbl属性2']")
 
         product_list.extend([label.replace('：', '')])
 
         # 19 項目2: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
-        option_list = []
-        try:
-            option_list = product_page.find_elements_by_xpath(
-                "//select[@name='ctl00$MainContent$ddl属性2']/option"
-            )
-        except WebDriverException:
-            pass
+        option_list = SCRAPER.get_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性2']/option"
+        )
 
         option_text = ''
         for option in option_list:
@@ -542,27 +469,16 @@ if __name__ == '__main__':
 
         # 20 項目選択肢3: 選択項目が複数ある場合（3個め）
         # ラベルを取得する。
-        label = ''
-        try:
-            label = product_page.find_element_by_xpath(
-                "//span[@id='MainContent_lbl属性3']"
-            ).text
-        except NoSuchElementException:
-            pass
-        except WebDriverException:
-            pass
+        label = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lbl属性3']")
 
         product_list.extend([label.replace('：', '')])
 
         # 21 項目3: 選択項目のリスト表示されたもの半角スペースで区切って表示
         # オプションを取得する。
-        option_list = []
-        try:
-            option_list = product_page.find_elements_by_xpath(
-                "//select[@name='ctl00$MainContent$ddl属性3']/option"
-            )
-        except WebDriverException:
-            pass
+        option_list = SCRAPER.get_elements_by_xpath(
+            "//select[@name='ctl00$MainContent$ddl属性3']/option"
+        )
 
         option_text = ''
         for option in option_list:
@@ -586,26 +502,14 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 26 販売単位: 数量の入力ボックス右に表示される単位
-        try:
-            lbl_unit = product_page.find_element_by_xpath("//span[@id='MainContent_lblUnit']").text
-        except NoSuchElementException:
-            lbl_unit = ''
-        except WebDriverException:
-            lbl_unit = ''
-        else:
-            pass
+        lbl_unit = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblUnit']")
 
         product_list.extend([lbl_unit])
 
         # 27 JAN: JANコード
-        try:
-            jancd = product_page.find_element_by_xpath("//span[@id='MainContent_lblJANCD']").text
-        except NoSuchElementException:
-            jancd = ''
-        except WebDriverException:
-            jancd = ''
-        else:
-            pass
+        jancd = SCRAPER.get_text_by_xpath(
+            "//span[@id='MainContent_lblJANCD']")
 
         product_list.extend([jancd])
 
@@ -696,7 +600,7 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # 商品画像
-        up_image_list = SCRAPING.get_attribute_list_by_xpath(
+        up_image_list = SCRAPER.get_attribute_list_by_xpath(
             "//div[@id='up']/img", 'src'
         )
         image_name_list = []
@@ -803,9 +707,9 @@ if __name__ == '__main__':
         product_list.extend([''])
 
         # アイコン画像
-        icon_image_list = SCRAPING.get_attribute_list_by_xpath(
-            "//div[@id='r-icon']/img", 'src'
-        )
+        icon_image_list = SCRAPER.get_attribute_list_by_xpath(
+            "//div[@id='r-icon']/img", 'src')
+
         icon_image_name_list = []
         icon_name_list = []
         icon_url_list = []
@@ -1012,14 +916,10 @@ if __name__ == '__main__':
 
         # 78 備考1: 同一カテゴリー商品のWEBCD
         # 複数ある場合は半角スペースで区切る
-        category_list = []
-        try:
-            r_category_list = product_page.find_elements_by_xpath(
-                "//div[@id='r-category']/table/tbody/tr/td[@class='Name']/a"
-            )
-        except WebDriverException:
-            pass
+        r_category_list = SCRAPER.get_elements_by_xpath(
+            "//div[@id='r-category']/table/tbody/tr/td[@class='Name']/a")
 
+        category_list = []
         for r_category in r_category_list:
             category_list.append(r_category.get_attribute('href'))
 
